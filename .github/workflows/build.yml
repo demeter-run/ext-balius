@@ -5,6 +5,7 @@ on:
     branches:
       - "main"
     paths:
+      - ".github/image/Dockerfile"
       - ".github/workflows/build.yml"
       - "operator/**"
       - "proxy/**"
