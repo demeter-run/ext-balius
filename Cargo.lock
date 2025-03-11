@@ -237,7 +237,7 @@ dependencies = [
 [[package]]
 name = "balius-runtime"
 version = "0.3.0"
-source = "git+https://github.com/gonzalezzfelipe/balius.git?branch=feat/support-object-urls#d50bbda84973990a7f344658adf10cdecbeee847"
+source = "git+https://github.com/gonzalezzfelipe/balius.git?branch=feat/support-object-urls#a94b38e6bb74a7eceb91dea4038a7e7bb5768ebe"
 dependencies = [
  "async-trait",
  "flate2",
@@ -1826,6 +1826,7 @@ dependencies = [
  "balius-runtime",
  "config",
  "futures-util",
+ "hex",
  "k8s-openapi",
  "kube",
  "lazy_static",
@@ -1840,6 +1841,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "url",
+ "warp",
 ]
 
 [[package]]

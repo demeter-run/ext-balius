@@ -5,6 +5,7 @@ use tracing::{debug, warn, Level};
 
 mod config;
 mod runtime;
+mod server;
 
 async fn wait_for_exit_signal() {
     let mut sigterm =
@@ -59,7 +60,7 @@ async fn main() -> miette::Result<()> {
     let cancel = hook_exit_token();
 
     let jsonrpc_server = async {
-        balius_runtime::drivers::jsonrpc::serve(config.rpc.clone(), runtime.clone(), cancel.clone())
+        server::serve(config.rpc.clone(), runtime.clone(), cancel.clone())
             .await
             .into_diagnostic()
             .context("Running JsonRPC server")

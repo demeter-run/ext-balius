@@ -142,6 +142,12 @@ impl ProxyHttp for BaliusProxy {
             ctx.consumer.network, self.config.balius_dns, self.config.balius_port
         );
 
+        // replace existing header if any
+        session
+            .req_header_mut()
+            .insert_header("worker", &ctx.consumer.port_name)
+            .unwrap();
+
         if self.limiter(&ctx.consumer).await? {
             session.respond_error(429).await?;
             return Ok(true);
