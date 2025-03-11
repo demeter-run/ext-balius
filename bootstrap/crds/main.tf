@@ -14,7 +14,7 @@ resource "kubernetes_manifest" "customresourcedefinition_baliusworkers_demeter_r
         "kind"   = "BaliusWorker"
         "plural" = "baliusworkers"
         "shortNames" = [
-          "sapts",
+          "bwapts",
         ]
         "singular" = "baliusworker"
       }

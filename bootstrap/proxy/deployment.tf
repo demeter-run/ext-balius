@@ -26,7 +26,7 @@ resource "kubernetes_deployment_v1" "balius_proxy" {
       spec {
         container {
           name              = "main"
-          image             = "ghcr.io/demeter-run/ext-cardano-balius-proxy:${var.proxy_image_tag}"
+          image             = "ghcr.io/demeter-run/ext-balius-proxy:${var.proxy_image_tag}"
           image_pull_policy = "IfNotPresent"
 
           resources {

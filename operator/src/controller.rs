@@ -27,7 +27,7 @@ impl Context {
     kind = "BaliusWorker",
     group = "demeter.run",
     version = "v1alpha1",
-    shortname = "sapts",
+    shortname = "bwapts",
     category = "demeter-port",
     namespaced
 )]
