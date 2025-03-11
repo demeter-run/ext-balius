@@ -27,7 +27,7 @@ module "proxy" {
 }
 
 module "instances" {
-  depends_on = [kubernetes_namespace.namespace, module.configs]
+  depends_on = [kubernetes_namespace.namespace]
   for_each   = var.instances
   source     = "./instance"
 
