@@ -4,8 +4,7 @@ RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/
 
 ARG TARGETARCH
 ARG BIN
-COPY bin/${BIN}-Linux-${TARGETARCH} /bin/${BIN}
-RUN chmod +x /bin/${BIN}
-RUN ln -s /bin/${BIN} /${BIN}
+COPY bin/${BIN}-Linux-${TARGETARCH} /bin/entrypoint
+RUN chmod +x /bin/entrypoint
 
-ENTRYPOINT [ "${BIN}" ]
+ENTRYPOINT [ "/bin/entrypoint" ]
