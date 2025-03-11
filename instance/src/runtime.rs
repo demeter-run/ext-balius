@@ -35,15 +35,20 @@ pub async fn update_runtime(runtime: Runtime) -> miette::Result<()> {
 
                 match url::Url::parse(&crd.spec.url) {
                     Ok(module) => {
-                        runtime
+                        if let Err(err) = runtime
                             .register_worker_from_url(
                                 &name,
                                 &module,
                                 Value::Object(crd.spec.config),
                             )
                             .await
-                            .into_diagnostic()
-                            .context("registering worker")?;
+                        {
+                            error!(
+                                err = err.to_string(),
+                                worker = name,
+                                "Error registering worker"
+                            );
+                        }
                     }
                     Err(err) => {
                         error!(
@@ -64,15 +69,20 @@ pub async fn update_runtime(runtime: Runtime) -> miette::Result<()> {
 
                 match url::Url::parse(&crd.spec.url) {
                     Ok(module) => {
-                        runtime
+                        if let Err(err) = runtime
                             .register_worker_from_url(
                                 &name,
                                 &module,
                                 Value::Object(crd.spec.config),
                             )
                             .await
-                            .into_diagnostic()
-                            .context("registering worker")?;
+                        {
+                            error!(
+                                err = err.to_string(),
+                                worker = name,
+                                "Error registering worker"
+                            );
+                        }
                     }
                     Err(err) => {
                         error!(

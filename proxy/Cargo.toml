@@ -10,7 +10,7 @@ operator = { path = "../operator" }
 async-trait = "0.1.77"
 dotenv = "0.15.0"
 futures-util = "0.3.30"
-pingora = { version = "0.4.0", features = ["proxy"] }
+pingora = { version = "0.4.0", features = ["proxy", "openssl"] }
 pingora-limits = "0.4.0"
 regex = "1.10.3"
 tokio = { version = "1.36.0", features = ["full"] }

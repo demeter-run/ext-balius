@@ -54,18 +54,13 @@ resource "kubernetes_deployment_v1" "balius" {
           image_pull_policy = "IfNotPresent"
 
           env {
-            name  = "BALIUSD_RPC_LISTEN_ADDRESS"
-            value = "0.0.0.0:${local.container_port}"
+            name  = "BALIUSD_CONFIG"
+            value = "/etc/config/baliusd.toml"
           }
 
-          env {
-            name  = "BALIUSD_LEDGER_ENDPOINT_URL"
-            value = var.utxorpc_url
-          }
-
-          env {
-            name  = "BALIUSD_CHAINSYNC_ENDPOINT_URL"
-            value = var.utxorpc_url
+          volume_mount {
+            name       = "config"
+            mount_path = "/etc/config"
           }
 
           resources {
@@ -82,6 +77,13 @@ resource "kubernetes_deployment_v1" "balius" {
           port {
             container_port = local.container_port
             name           = "api"
+          }
+        }
+
+        volume {
+          name = "config"
+          config_map {
+            name = "baliusd-${var.network}-config"
           }
         }
 
