@@ -12,8 +12,10 @@ use serde_json::Value;
 use tokio::pin;
 use tracing::{error, info, instrument};
 
+use crate::config::Config;
+
 #[instrument("crdwatcher", skip_all)]
-pub async fn update_runtime(runtime: Runtime) -> miette::Result<()> {
+pub async fn update_runtime(config: &Config, runtime: Runtime) -> miette::Result<()> {
     let client = Client::try_default()
         .await
         .expect("failed to create kube client");
@@ -31,32 +33,35 @@ pub async fn update_runtime(runtime: Runtime) -> miette::Result<()> {
 
             Ok(Some(Event::InitApply(crd))) => {
                 let name = crd.name_any();
-                info!("Registering worker: {}", &name);
-
-                match url::Url::parse(&crd.spec.url) {
-                    Ok(module) => {
-                        if let Err(err) = runtime
-                            .register_worker_from_url(
-                                &name,
-                                &module,
-                                Value::Object(crd.spec.config),
-                            )
-                            .await
-                        {
+                if crd.spec.network == config.network {
+                    info!("Registering worker: {}", &name);
+                    match url::Url::parse(&crd.spec.url) {
+                        Ok(module) => {
+                            if let Err(err) = runtime
+                                .register_worker_from_url(
+                                    &name,
+                                    &module,
+                                    Value::Object(crd.spec.config),
+                                )
+                                .await
+                            {
+                                error!(
+                                    err = err.to_string(),
+                                    worker = name,
+                                    "Error registering worker"
+                                );
+                            }
+                        }
+                        Err(err) => {
                             error!(
                                 err = err.to_string(),
-                                worker = name,
-                                "Error registering worker"
+                                "Failed to parse URL for worker: {}", name
                             );
                         }
-                    }
-                    Err(err) => {
-                        error!(
-                            err = err.to_string(),
-                            "Failed to parse URL for worker: {}", name
-                        );
-                    }
-                };
+                    };
+                } else {
+                    info!("New CRD doesn't match network: {}", &name);
+                }
             }
 
             Ok(Some(Event::InitDone)) => {
@@ -65,32 +70,36 @@ pub async fn update_runtime(runtime: Runtime) -> miette::Result<()> {
 
             Ok(Some(Event::Apply(crd))) => {
                 let name = crd.name_any();
-                info!("Updateted worker: {}", &name);
 
-                match url::Url::parse(&crd.spec.url) {
-                    Ok(module) => {
-                        if let Err(err) = runtime
-                            .register_worker_from_url(
-                                &name,
-                                &module,
-                                Value::Object(crd.spec.config),
-                            )
-                            .await
-                        {
+                if crd.spec.network == config.network {
+                    info!("Applying worker: {}", &name);
+                    match url::Url::parse(&crd.spec.url) {
+                        Ok(module) => {
+                            if let Err(err) = runtime
+                                .register_worker_from_url(
+                                    &name,
+                                    &module,
+                                    Value::Object(crd.spec.config),
+                                )
+                                .await
+                            {
+                                error!(
+                                    err = err.to_string(),
+                                    worker = name,
+                                    "Error registering worker"
+                                );
+                            }
+                        }
+                        Err(err) => {
                             error!(
                                 err = err.to_string(),
-                                worker = name,
-                                "Error registering worker"
+                                "Failed to parse URL for worker: {}", name
                             );
                         }
-                    }
-                    Err(err) => {
-                        error!(
-                            err = err.to_string(),
-                            "Failed to parse URL for worker: {}", name
-                        );
-                    }
-                };
+                    };
+                } else {
+                    info!("Applied CRD doesn't match network: {}", &name);
+                }
             }
 
             Ok(Some(Event::Delete(crd))) => {

@@ -10,6 +10,7 @@ resource "kubernetes_config_map" "cfg" {
       {
         utxorpc_url    = var.utxorpc_url,
         container_port = local.container_port
+        network        = var.network
       }
     )}"
   }

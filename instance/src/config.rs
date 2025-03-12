@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Config {
+    pub network: String,
     pub rpc: drivers::jsonrpc::Config,
     pub ledger: ledgers::u5c::Config,
     pub chainsync: drivers::chainsync::Config,

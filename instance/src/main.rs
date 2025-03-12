@@ -73,7 +73,7 @@ async fn main() -> miette::Result<()> {
             .context("Running chainsync driver")
     };
 
-    let runtime_update = async { runtime::update_runtime(runtime.clone()).await };
+    let runtime_update = async { runtime::update_runtime(&config, runtime.clone()).await };
 
     tokio::try_join!(jsonrpc_server, chainsync_driver, runtime_update)?;
     Ok(())
