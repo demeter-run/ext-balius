@@ -9,7 +9,7 @@ resource "kubernetes_manifest" "customresourcedefinition_baliusworkers_demeter_r
       "group" = "demeter.run"
       "names" = {
         "categories" = [
-          "demeter-port",
+          "demeter-worker",
         ]
         "kind"   = "BaliusWorker"
         "plural" = "baliusworkers"
