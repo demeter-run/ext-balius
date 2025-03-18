@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-balius-runtime = { git = "https://github.com/gonzalezzfelipe/balius.git", branch="feat/support-object-urls", features = ["http", "aws"] }
+balius-runtime = { git = "https://github.com/txpipe/balius.git", features = ["http", "aws"] }
 config = { version = "0.15.9", default-features = false, features = ["toml", "json"] }
 futures-util = "0.3.30"
 hex = "0.4.3"

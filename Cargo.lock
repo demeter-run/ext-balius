@@ -242,8 +242,8 @@ dependencies = [
 
 [[package]]
 name = "balius-runtime"
-version = "0.3.0"
-source = "git+https://github.com/gonzalezzfelipe/balius.git?branch=feat/support-object-urls#a94b38e6bb74a7eceb91dea4038a7e7bb5768ebe"
+version = "0.3.4"
+source = "git+https://github.com/txpipe/balius.git#5db936a901437c3f7318ab8d41c8ae1c3ba182a8"
 dependencies = [
  "async-trait",
  "flate2",
