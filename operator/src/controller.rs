@@ -28,7 +28,7 @@ impl Context {
     group = "demeter.run",
     version = "v1alpha1",
     shortname = "bwapts",
-    category = "demeter-port",
+    category = "demeter-worker",
     namespaced
 )]
 #[kube(status = "BaliusWorkerStatus")]
