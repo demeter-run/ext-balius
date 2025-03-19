@@ -70,17 +70,17 @@ resource "aws_iam_access_key" "iam_user_workers_storage_keys" {
   user = aws_iam_user.api_upload_workers_storage_user.name
 }
 
-# Store IAM user credentials in AWS Secrets Manager
-resource "aws_secretsmanager_secret" "workers_credentials" {
-  name        = local.workers_secret_name
-  description = "Credentials for demeter workers S3 bucket access"
-}
 
-resource "aws_secretsmanager_secret_version" "workers_credentials_version" {
-  secret_id = aws_secretsmanager_secret.workers_credentials.id
+resource "kubernetes_secret" "workers_s3_credentials" {
+  metadata {
+    name      = local.workers_secret_name
+    namespace = var.namespace
+  }
 
-  secret_string = jsonencode({
-    access_key = aws_iam_access_key.iam_user_workers_storage_keys.id
-    secret_key = aws_iam_access_key.iam_user_workers_storage_keys.secret
-  })
+  type = "Opaque"
+
+  data = {
+    aws_access_key_id     = aws_iam_access_key.iam_user_workers_storage_keys.id
+    aws_secret_access_key = aws_iam_access_key.iam_user_workers_storage_keys.secret
+  }
 }
