@@ -72,7 +72,7 @@ resource "aws_iam_access_key" "iam_user_workers_storage_keys" {
 
 resource "kubernetes_secret" "workers_s3_credentials" {
   metadata {
-    name      = var.crendentials_secret_name
+    name      = var.credentials_secret_name
     namespace = var.namespace
   }
 

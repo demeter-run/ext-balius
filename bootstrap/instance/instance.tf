@@ -62,7 +62,7 @@ resource "kubernetes_deployment_v1" "balius" {
             name = "AWS_ACCESS_KEY_ID"
             value_from {
               secret_key_ref {
-                name = "demeter-workers-credentials"
+                name = var.credentials_secret_name
                 key  = "aws_access_key_id"
               }
             }
@@ -72,7 +72,7 @@ resource "kubernetes_deployment_v1" "balius" {
             name = "AWS_SECRET_ACCESS_KEY"
             value_from {
               secret_key_ref {
-                name = "demeter-workers-credentials"
+                name = var.credentials_secret_name
                 key  = "aws_secret_access_key"
               }
             }
