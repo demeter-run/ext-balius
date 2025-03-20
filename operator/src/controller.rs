@@ -33,6 +33,7 @@ impl Context {
 )]
 #[kube(status = "BaliusWorkerStatus")]
 #[kube(printcolumn = r#"
+        {"name": "Display Name", "jsonPath": ".spec.displayName", "type": "string"},
         {"name": "Network", "jsonPath": ".spec.network", "type": "string"},
         {"name": "Throughput Tier", "jsonPath":".spec.throughputTier", "type": "string"}, 
         {"name": "Endpoint URL", "jsonPath": ".status.endpointUrl", "type": "string"},
@@ -49,6 +50,7 @@ pub struct BaliusWorkerSpec {
     pub version: String,
     pub url: String,
     pub config: serde_json::Map<String, serde_json::Value>,
+    pub display_name: String,
 }
 
 #[derive(Deserialize, Serialize, Clone, Default, Debug, JsonSchema)]
