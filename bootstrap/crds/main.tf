@@ -23,6 +23,11 @@ resource "kubernetes_manifest" "customresourcedefinition_baliusworkers_demeter_r
         {
           "additionalPrinterColumns" = [
             {
+              "jsonPath" = ".spec.displayName"
+              "name"     = "Display Name"
+              "type"     = "string"
+            },
+            {
               "jsonPath" = ".spec.network"
               "name"     = "Network"
               "type"     = "string"
@@ -62,6 +67,9 @@ resource "kubernetes_manifest" "customresourcedefinition_baliusworkers_demeter_r
                       "additionalProperties" = true
                       "type"                 = "object"
                     }
+                    "displayName" = {
+                      "type" = "string"
+                    }
                     "network" = {
                       "type" = "string"
                     }
@@ -78,6 +86,7 @@ resource "kubernetes_manifest" "customresourcedefinition_baliusworkers_demeter_r
                   "required" = [
                     "authToken",
                     "config",
+                    "displayName",
                     "network",
                     "throughputTier",
                     "url",
