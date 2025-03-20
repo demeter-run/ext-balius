@@ -10,10 +10,13 @@ variable "operator_image_tag" {
   type = string
 }
 
-
 variable "metrics_delay" {
   description = "The inverval for polling metrics data (in seconds)"
   default     = "30"
+}
+
+variable "credentials_secret_name" {
+  type = string
 }
 
 variable "tolerations" {

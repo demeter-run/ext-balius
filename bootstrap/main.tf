@@ -5,14 +5,15 @@ resource "kubernetes_namespace" "namespace" {
 }
 
 module "feature" {
-  depends_on         = [kubernetes_namespace.namespace]
-  source             = "./feature"
-  namespace          = var.namespace
-  operator_image_tag = var.operator_image_tag
-  metrics_delay      = var.metrics_delay
-  resources          = var.operator_resources
-  tolerations        = var.operator_tolerations
-  extension_domain   = var.extension_domain
+  depends_on              = [kubernetes_namespace.namespace]
+  source                  = "./feature"
+  namespace               = var.namespace
+  operator_image_tag      = var.operator_image_tag
+  metrics_delay           = var.metrics_delay
+  resources               = var.operator_resources
+  tolerations             = var.operator_tolerations
+  extension_domain        = var.extension_domain
+  credentials_secret_name = "demeter-workers-credentials"
 }
 
 module "proxy" {
@@ -31,12 +32,13 @@ module "instances" {
   for_each   = var.instances
   source     = "./instance"
 
-  namespace   = var.namespace
-  image       = each.value.image
-  salt        = each.value.salt
-  network     = each.value.network
-  utxorpc_url = each.value.utxorpc_url
-  replicas    = coalesce(each.value.replicas, 1)
+  namespace               = var.namespace
+  image                   = each.value.image
+  salt                    = each.value.salt
+  network                 = each.value.network
+  utxorpc_url             = each.value.utxorpc_url
+  replicas                = coalesce(each.value.replicas, 1)
+  credentials_secret_name = "demeter-workers-credentials"
   resources = coalesce(each.value.resources, {
     limits : {
       cpu : "200m",
