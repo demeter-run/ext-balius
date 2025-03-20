@@ -2,7 +2,6 @@ locals {
   workers_bucket_name       = "demeter-workers"
   workers_bucket_iam_policy = "demeter-workers-policy"
   workers_bucket_iam_user   = "demeter-workers-user"
-  workers_secret_name       = "demeter-workers-credentials"
 }
 
 resource "aws_s3_bucket" "workers_storage" {
@@ -73,7 +72,7 @@ resource "aws_iam_access_key" "iam_user_workers_storage_keys" {
 
 resource "kubernetes_secret" "workers_s3_credentials" {
   metadata {
-    name      = local.workers_secret_name
+    name      = var.crendentials_secret_name
     namespace = var.namespace
   }
 

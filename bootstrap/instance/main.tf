@@ -23,6 +23,10 @@ variable "replicas" {
   default = 1
 }
 
+variable "credentials_secret_name" {
+  type = string
+}
+
 variable "tolerations" {
   type = list(object({
     effect   = string

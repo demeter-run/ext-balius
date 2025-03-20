@@ -58,6 +58,26 @@ resource "kubernetes_deployment_v1" "balius" {
             value = "/etc/config/baliusd.toml"
           }
 
+          env {
+            name = "AWS_ACCESS_KEY_ID"
+            value_from {
+              secret_key_ref {
+                name = "demeter-workers-credentials"
+                key  = "aws_access_key_id"
+              }
+            }
+          }
+
+          env {
+            name = "AWS_SECRET_ACCESS_KEY"
+            value_from {
+              secret_key_ref {
+                name = "demeter-workers-credentials"
+                key  = "aws_secret_access_key"
+              }
+            }
+          }
+
           volume_mount {
             name       = "config"
             mount_path = "/etc/config"
