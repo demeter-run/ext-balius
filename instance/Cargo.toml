@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+aws-config = "1.6.0"
+aws-sdk-s3 = "1.79.0"
 balius-runtime = { git = "https://github.com/txpipe/balius.git", features = ["http", "aws"] }
 config = { version = "0.15.9", default-features = false, features = ["toml", "json"] }
 futures-util = "0.3.30"

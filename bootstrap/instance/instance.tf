@@ -59,6 +59,16 @@ resource "kubernetes_deployment_v1" "balius" {
           }
 
           env {
+            name = "AWS_REGION"
+            value_from {
+              secret_key_ref {
+                name = var.credentials_secret_name
+                key  = "aws_region"
+              }
+            }
+          }
+
+          env {
             name = "AWS_ACCESS_KEY_ID"
             value_from {
               secret_key_ref {

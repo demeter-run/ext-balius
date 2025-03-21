@@ -1,3 +1,4 @@
+use aws_sdk_s3::Client as S3Client;
 use balius_runtime::Runtime;
 use futures_util::TryStreamExt;
 use miette::{Context, IntoDiagnostic};
@@ -11,8 +12,41 @@ use operator::{
 use serde_json::Value;
 use tokio::pin;
 use tracing::{error, info, instrument};
+use url::Url;
 
 use crate::config::Config;
+
+async fn download_s3_object(s3_url: &str) -> miette::Result<Vec<u8>> {
+    let url = Url::parse(s3_url)
+        .into_diagnostic()
+        .context("Failed ot parse url")?;
+
+    let bucket = match url.host_str() {
+        Some(url) => url,
+        None => miette::bail!("Invalid bucket"),
+    };
+    let key = url.path().trim_start_matches('/');
+
+    let config = aws_config::load_defaults(aws_config::BehaviorVersion::latest()).await;
+    let client = S3Client::new(&config);
+
+    let resp = client
+        .get_object()
+        .bucket(bucket)
+        .key(key)
+        .send()
+        .await
+        .into_diagnostic()
+        .context("Failed to get from s3")?;
+
+    let body = resp
+        .body
+        .collect()
+        .await
+        .into_diagnostic()
+        .context("Failed to download from s3")?;
+    Ok(body.to_vec())
+}
 
 #[instrument("crdwatcher", skip_all)]
 pub async fn update_runtime(config: &Config, runtime: Runtime) -> miette::Result<()> {
@@ -35,14 +69,10 @@ pub async fn update_runtime(config: &Config, runtime: Runtime) -> miette::Result
                 let name = crd.name_any();
                 if crd.spec.network == config.network {
                     info!("Registering worker: {}", &name);
-                    match url::Url::parse(&crd.spec.url) {
-                        Ok(module) => {
+                    match download_s3_object(&crd.spec.url).await {
+                        Ok(bytes) => {
                             if let Err(err) = runtime
-                                .register_worker_from_url(
-                                    &name,
-                                    &module,
-                                    Value::Object(crd.spec.config),
-                                )
+                                .register_worker(&name, &bytes, Value::Object(crd.spec.config))
                                 .await
                             {
                                 error!(
@@ -53,10 +83,7 @@ pub async fn update_runtime(config: &Config, runtime: Runtime) -> miette::Result
                             }
                         }
                         Err(err) => {
-                            error!(
-                                err = err.to_string(),
-                                "Failed to parse URL for worker: {}", name
-                            );
+                            error!(err = err.to_string(), "Failed to register worker: {}", name);
                         }
                     };
                 } else {

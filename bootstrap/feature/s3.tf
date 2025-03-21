@@ -79,6 +79,7 @@ resource "kubernetes_secret" "workers_s3_credentials" {
   type = "Opaque"
 
   data = {
+    aws_region            = "us-west-2"
     aws_access_key_id     = aws_iam_access_key.iam_user_workers_storage_keys.id
     aws_secret_access_key = aws_iam_access_key.iam_user_workers_storage_keys.secret
   }

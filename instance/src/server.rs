@@ -80,7 +80,7 @@ pub async fn serve(
 ) -> Result<(), Error> {
     let filter = warp::any()
         .map(move || runtime.clone())
-        .and(warp::header::<String>("worker"))
+        .and(warp::path::param())
         .and(warp::post())
         .and(warp::body::json())
         .then(handle_request);
