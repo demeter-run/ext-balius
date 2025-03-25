@@ -30,6 +30,7 @@ async fn download_s3_object(s3_url: &str) -> miette::Result<Vec<u8>> {
     let config = aws_config::load_defaults(aws_config::BehaviorVersion::latest()).await;
     let client = S3Client::new(&config);
 
+    info!(bucket = bucket, key = key, "Donwloading object...");
     let resp = client
         .get_object()
         .bucket(bucket)
