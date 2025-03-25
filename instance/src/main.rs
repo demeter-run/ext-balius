@@ -35,6 +35,9 @@ pub fn hook_exit_token() -> CancellationToken {
 
 #[tokio::main]
 async fn main() -> miette::Result<()> {
+    rustls::crypto::aws_lc_rs::default_provider()
+        .install_default()
+        .expect("Failed to install default provider");
     tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
     let config: config::Config = config::load_config(&None)

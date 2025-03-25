@@ -8,6 +8,9 @@ use operator::{controller, metrics as metrics_collector, State};
 async fn main() -> io::Result<()> {
     dotenv().ok();
 
+    rustls::crypto::aws_lc_rs::default_provider()
+        .install_default()
+        .expect("Failed to install default provider");
     tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
     let state = Arc::new(State::default());
