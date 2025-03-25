@@ -63,10 +63,11 @@ pub struct BaliusWorkerStatus {
 
 async fn reconcile(crd: Arc<BaliusWorker>, ctx: Arc<Context>) -> Result<Action> {
     let (hostname, hostname_key) = build_hostname(&crd.spec.auth_token);
+    let path = crd.name_any();
 
     let status = BaliusWorkerStatus {
-        endpoint_url: format!("https://{hostname}",),
-        authenticated_endpoint_url: format!("https://{hostname_key}").into(),
+        endpoint_url: format!("https://{hostname}/{path}",),
+        authenticated_endpoint_url: format!("https://{hostname_key}/{path}").into(),
         auth_token: crd.spec.auth_token.clone(),
     };
 
