@@ -5,6 +5,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Config {
     pub network: String,
+    pub connection: String,
+    pub max_pool_size: Option<u32>,
+    pub namespace: String,
+    pub pod: String,
+    pub lease_name: String,
+    pub lease_ttl_seconds: Option<u64>,
+    pub lease_renew_seconds: Option<u64>,
     pub rpc: drivers::jsonrpc::Config,
     pub ledger: ledgers::u5c::Config,
     pub chainsync: drivers::chainsync::Config,
