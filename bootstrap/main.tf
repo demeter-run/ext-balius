@@ -42,6 +42,7 @@ module "postgres" {
   params    = var.postgres_params
   volume    = var.postgres_volume
   replicas  = var.postgres_replicas
+  networks  = var.networks
 }
 
 module "instances" {
@@ -56,6 +57,7 @@ module "instances" {
   utxorpc_url             = each.value.utxorpc_url
   replicas                = coalesce(each.value.replicas, 1)
   credentials_secret_name = "demeter-workers-credentials"
+  postgres_name           = local.postgres_name
   postgres_host           = local.postgres_host
   resources = coalesce(each.value.resources, {
     limits : {

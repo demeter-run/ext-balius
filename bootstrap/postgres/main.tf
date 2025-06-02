@@ -6,6 +6,10 @@ variable "name" {
   type = string
 }
 
+variable "networks" {
+  type = list(string)
+}
+
 variable "resources" {
   type = object({
     requests = map(string)

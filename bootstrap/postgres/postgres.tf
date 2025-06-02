@@ -23,7 +23,7 @@ resource "kubernetes_manifest" "postgres" {
         "0.0.0.0/0"
       ]
       "dockerImage" : "ghcr.io/zalando/spilo-15:3.2-p1"
-      "teamId" = "dmtr"
+      "teamId" = "balius"
       "tolerations" = [
         {
           "key"      = "demeter.run/workload"
@@ -55,9 +55,7 @@ resource "kubernetes_manifest" "postgres" {
         "service.beta.kubernetes.io/aws-load-balancer-type"            = "external"
       }
       "databases" = {
-        "balius-cardano-mainnet" = "balius"
-        "balius-cardano-preprod" = "balius"
-        "balius-cardano-preview" = "balius"
+        for network in var.networks : replace(network, "-", "") => "balius"
       }
       "postgresql" = {
         "version"    = "14"
@@ -88,7 +86,7 @@ resource "kubernetes_manifest" "postgres" {
           env : [
             {
               name : "DATA_SOURCE_URI"
-              value : "localhost:5432/balius-cardano-mainnet?sslmode=disable"
+              value : "localhost:5432/${replace(var.networks[0], "-", "")}?sslmode=disable"
             },
             {
               name : "DATA_SOURCE_USER"

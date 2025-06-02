@@ -27,6 +27,10 @@ variable "credentials_secret_name" {
   type = string
 }
 
+variable "postgres_name" {
+  type = string
+}
+
 variable "postgres_host" {
   type = string
 }

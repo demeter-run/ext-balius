@@ -59,11 +59,21 @@ resource "kubernetes_deployment_v1" "balius" {
           }
 
           env {
+            name = "POSTGRES_USER"
+            value_from {
+              secret_key_ref {
+                key  = "username"
+                name = "balius.${var.postgres_name}.credentials.postgresql.acid.zalan.do"
+              }
+            }
+          }
+
+          env {
             name = "POSTGRES_PASSWORD"
             value_from {
               secret_key_ref {
                 key  = "password"
-                name = "scrolls.${var.postgres_host}.credentials.postgresql.acid.zalan.do"
+                name = "balius.${var.postgres_name}.credentials.postgresql.acid.zalan.do"
               }
             }
           }
@@ -74,13 +84,8 @@ resource "kubernetes_deployment_v1" "balius" {
           }
 
           env {
-            name  = "POSTGRES_USER"
-            value = "scrolls"
-          }
-
-          env {
             name  = "BALIUSD_CONNECTION"
-            value = "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):5432/balius-${var.network}"
+            value = "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):5432/${replace(var.network, "-", "")}"
           }
 
           env {
