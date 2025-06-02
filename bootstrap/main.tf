@@ -1,3 +1,8 @@
+locals {
+  postgres_name = "balius-postgres"
+  postgres_host = "${local.postgres_name}.${var.namespace}.svc.cluster.local"
+}
+
 resource "kubernetes_namespace" "namespace" {
   metadata {
     name = var.namespace
@@ -27,6 +32,18 @@ module "proxy" {
   tolerations     = var.proxy_tolerations
 }
 
+module "postgres" {
+  depends_on = [kubernetes_namespace.namespace]
+  source     = "./postgres"
+
+  name      = local.postgres_name
+  namespace = var.namespace
+  resources = var.postgres_resources
+  params    = var.postgres_params
+  volume    = var.postgres_volume
+  replicas  = var.postgres_replicas
+}
+
 module "instances" {
   depends_on = [kubernetes_namespace.namespace]
   for_each   = var.instances
@@ -39,6 +56,7 @@ module "instances" {
   utxorpc_url             = each.value.utxorpc_url
   replicas                = coalesce(each.value.replicas, 1)
   credentials_secret_name = "demeter-workers-credentials"
+  postgres_host           = local.postgres_host
   resources = coalesce(each.value.resources, {
     limits : {
       cpu : "200m",
