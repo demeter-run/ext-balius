@@ -2597,6 +2597,7 @@ dependencies = [
  "miette",
  "object_store",
  "operator",
+ "prometheus",
  "prost",
  "rustls 0.23.25",
  "serde",

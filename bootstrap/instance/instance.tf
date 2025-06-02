@@ -1,6 +1,7 @@
 locals {
-  name           = "balius-${var.network}-${var.salt}"
-  container_port = 3000
+  name            = "balius-${var.network}-${var.salt}"
+  container_port  = 3000
+  prometheus_port = 8000
 }
 
 resource "kubernetes_deployment_v1" "balius" {
@@ -32,7 +33,6 @@ resource "kubernetes_deployment_v1" "balius" {
     }
 
     template {
-
       metadata {
         name = local.name
         labels = {
@@ -155,6 +155,11 @@ resource "kubernetes_deployment_v1" "balius" {
           port {
             container_port = local.container_port
             name           = "api"
+          }
+
+          port {
+            container_port = local.prometheus_port
+            name           = "metrics"
           }
         }
 

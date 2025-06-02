@@ -11,7 +11,7 @@
 /// );
 ///
 /// CREATE TABLE wal (
-///     logseq BIGINT PRIMARY KEY,
+///     logseq BIGSERIAL PRIMARY KEY,
 ///     logentry BYTEA NOT NULL
 /// );
 /// ```
@@ -27,42 +27,12 @@ use tokio::sync::Mutex;
 use tokio_postgres::NoTls;
 
 pub struct PostgresStore {
-    log_seq: u64,
     pool: Pool<PostgresConnectionManager<NoTls>>,
 }
 
 impl PostgresStore {
-    pub async fn try_new(pool: &Pool<PostgresConnectionManager<NoTls>>) -> Result<Self, Error> {
-        let log_seq = Self::load_log_seq(pool).await?.unwrap_or_default();
-        Ok(Self {
-            log_seq,
-            pool: pool.clone(),
-        })
-    }
-
-    async fn load_log_seq(
-        pool: &Pool<PostgresConnectionManager<NoTls>>,
-    ) -> Result<Option<LogSeq>, Error> {
-        let conn = pool
-            .get()
-            .await
-            .map_err(|err| Error::Store(format!("failed to get connection for store: {}", err)))?;
-        match conn
-            .query_opt("SELECT logseq FROM wal ORDER BY logseq DESC LIMIT 1", &[])
-            .await
-            .map_err(|err| Error::Store(format!("Failed to query store: {}", err)))?
-        {
-            Some(row) => {
-                let seq: i64 = row.get(0);
-                Ok(Some(seq as u64))
-            }
-            None => Ok(None),
-        }
-    }
-
-    async fn update_log_seq(&mut self) -> Result<(), Error> {
-        self.log_seq = Self::load_log_seq(&self.pool).await?.unwrap_or_default();
-        Ok(())
+    pub fn new(pool: &Pool<PostgresConnectionManager<NoTls>>) -> Self {
+        Self { pool: pool.clone() }
     }
 }
 
@@ -98,8 +68,6 @@ impl StoreTrait for PostgresStore {
         undo_blocks: &[Block],
         next_block: &Block,
     ) -> Result<LogSeq, Error> {
-        self.update_log_seq().await?;
-        self.log_seq += 1;
         let entry = LogEntry {
             next_block: next_block.to_bytes(),
             undo_blocks: undo_blocks.iter().map(|x| x.to_bytes()).collect(),
@@ -108,16 +76,22 @@ impl StoreTrait for PostgresStore {
             self.pool.get().await.map_err(|err| {
                 Error::Store(format!("failed to get connection for store: {}", err))
             })?;
-        let _ = conn
-            .query(
-                "INSERT INTO wal (logseq, logentry)
-                 VALUES ($1::BIGINT, $2::BYTEA);",
-                &[&(self.log_seq as i64), &entry.encode_to_vec()],
+        match conn
+            .query_opt(
+                "INSERT INTO wal (logentry)
+                 VALUES ($1::BYTEA)
+                 RETURNING logseq;",
+                &[&entry.encode_to_vec()],
             )
             .await
-            .map_err(|err| Error::Store(format!("Failed to query store: {}", err)))?;
-
-        Ok(self.log_seq)
+            .map_err(|err| Error::Store(format!("Failed to query store: {}", err)))?
+        {
+            Some(row) => {
+                let seq: i64 = row.get(0);
+                Ok(seq as u64)
+            }
+            None => Err(Error::Store("failed to get logseq".to_string())),
+        }
     }
 
     async fn get_worker_cursor(&self, id: &str) -> Result<Option<LogSeq>, Error> {

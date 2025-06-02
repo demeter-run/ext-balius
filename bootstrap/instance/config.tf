@@ -8,9 +8,10 @@ resource "kubernetes_config_map" "cfg" {
     "baliusd.toml" = "${templatefile(
       "${path.module}/baliusd.toml.tftpl",
       {
-        utxorpc_url    = var.utxorpc_url,
-        container_port = local.container_port
-        network        = var.network
+        utxorpc_url     = var.utxorpc_url,
+        container_port  = local.container_port
+        prometheus_port = local.prometheus_port
+        network         = var.network
       }
     )}"
   }

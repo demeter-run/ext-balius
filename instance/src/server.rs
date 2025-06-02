@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error};
 use warp::Filter as _;
 
 use balius_runtime::{wit, Error, Runtime};
+
+use crate::metrics::Metrics;
 
 #[derive(Deserialize)]
 struct Request {
@@ -29,10 +31,11 @@ fn parse_request(body: serde_json::Value) -> Result<Request, ErrorResponse> {
 }
 
 pub async fn handle_request(
-    runtime: Runtime,
+    state: (Runtime, Arc<Metrics>),
     worker: String,
     body: serde_json::Value,
 ) -> warp::reply::Json {
+    let (runtime, metrics) = state;
     let request = match parse_request(body) {
         Ok(x) => x,
         Err(err) => return warp::reply::json(&err),
@@ -62,10 +65,12 @@ pub async fn handle_request(
                 wit::Response::PartialTx(x) => json!({ "tx": hex::encode(x) }),
             };
 
+            metrics.requests(&worker, &request.method, 200);
             warp::reply::json(&x)
         }
         Err(err) => {
             error!(worker, id = request.id, "request failed");
+            metrics.requests(&worker, &request.method, 500);
             warp::reply::json(&ErrorResponse {
                 error: err.to_string(),
             })
@@ -76,10 +81,11 @@ pub async fn handle_request(
 pub async fn serve(
     config: balius_runtime::drivers::jsonrpc::Config,
     runtime: Runtime,
+    metrics: Arc<Metrics>,
     cancel: CancellationToken,
 ) -> Result<(), Error> {
     let filter = warp::any()
-        .map(move || runtime.clone())
+        .map(move || (runtime.clone(), metrics.clone()))
         .and(warp::path::param())
         .and(warp::post())
         .and(warp::body::json())

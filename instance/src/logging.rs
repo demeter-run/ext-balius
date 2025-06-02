@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 /// Postgres backend for Key Value interface.
 ///
 ///
@@ -19,13 +21,17 @@ use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use tokio_postgres::NoTls;
 
+use crate::metrics::Metrics;
+
 pub struct PostgresLogger {
     pool: Pool<PostgresConnectionManager<NoTls>>,
+    metrics: Arc<Metrics>,
 }
-impl From<&Pool<PostgresConnectionManager<NoTls>>> for PostgresLogger {
-    fn from(value: &Pool<PostgresConnectionManager<NoTls>>) -> Self {
+impl From<(&Pool<PostgresConnectionManager<NoTls>>, &Arc<Metrics>)> for PostgresLogger {
+    fn from(value: (&Pool<PostgresConnectionManager<NoTls>>, &Arc<Metrics>)) -> Self {
         Self {
-            pool: value.clone(),
+            pool: value.0.clone(),
+            metrics: value.1.clone(),
         }
     }
 }
@@ -41,23 +47,22 @@ impl LoggerProvider for PostgresLogger {
             }
         };
 
+        let level = match level {
+            Level::Info => "INFO",
+            Level::Trace => "TRACE",
+            Level::Debug => "DEBUG",
+            Level::Error => "ERROR",
+            Level::Warn => "WARN",
+            Level::Critical => "CRITICAL",
+        };
+
+        self.metrics.log(worker_id, level);
+
         if let Err(err) = conn
             .query(
                 "INSERT INTO logs (worker, level, context, message)
                  VALUES ($1::TEXT, $2::TEXT, $3::TEXT, $4::TEXT)",
-                &[
-                    &worker_id,
-                    match level {
-                        Level::Info => &"INFO",
-                        Level::Trace => &"TRACE",
-                        Level::Debug => &"DEBUG",
-                        Level::Error => &"ERROR",
-                        Level::Warn => &"WARN",
-                        Level::Critical => &"CRITICAL",
-                    },
-                    &context,
-                    &message,
-                ],
+                &[&worker_id, &level, &context, &message],
             )
             .await
         {

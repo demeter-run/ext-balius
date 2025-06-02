@@ -1,6 +1,7 @@
 use balius_runtime::{ledgers, Runtime, Store};
 use kv::PostgresKv;
 use logging::PostgresLogger;
+use metrics::Metrics;
 use miette::{Context, IntoDiagnostic as _};
 use std::{str::FromStr, sync::Arc};
 use store::PostgresStore;
@@ -12,6 +13,7 @@ mod chainsync;
 mod config;
 mod kv;
 mod logging;
+mod metrics;
 mod runtime;
 mod server;
 mod store;
@@ -55,6 +57,8 @@ async fn main() -> miette::Result<()> {
         .into_diagnostic()
         .context("loading config")?;
 
+    let metrics = Arc::new(Metrics::try_new()?);
+
     let pg_mgr = bb8_postgres::PostgresConnectionManager::new(
         tokio_postgres::config::Config::from_str(&config.connection)
             .into_diagnostic()
@@ -69,12 +73,7 @@ async fn main() -> miette::Result<()> {
         .into_diagnostic()
         .context("failed to build pool")?;
 
-    let store = Store::Custom(Arc::new(Mutex::new(
-        PostgresStore::try_new(&pool)
-            .await
-            .into_diagnostic()
-            .context("building new postgres store")?,
-    )));
+    let store = Store::Custom(Arc::new(Mutex::new(PostgresStore::new(&pool))));
 
     let ledger = ledgers::u5c::Ledger::new(&config.ledger)
         .await
@@ -84,10 +83,10 @@ async fn main() -> miette::Result<()> {
     let runtime = Runtime::builder(store)
         .with_ledger(ledger.into())
         .with_kv(balius_runtime::kv::Kv::Custom(Arc::new(Mutex::new(
-            PostgresKv::from(&pool),
+            PostgresKv::from((&pool, &metrics)),
         ))))
         .with_logger(balius_runtime::logging::Logger::Custom(Arc::new(
-            Mutex::new(PostgresLogger::from(&pool)),
+            Mutex::new(PostgresLogger::from((&pool, &metrics))),
         )))
         .build()
         .into_diagnostic()
@@ -96,10 +95,15 @@ async fn main() -> miette::Result<()> {
     let cancel = hook_exit_token();
 
     let jsonrpc_server = async {
-        server::serve(config.rpc.clone(), runtime.clone(), cancel.clone())
-            .await
-            .into_diagnostic()
-            .context("Running JsonRPC server")
+        server::serve(
+            config.rpc.clone(),
+            runtime.clone(),
+            metrics.clone(),
+            cancel.clone(),
+        )
+        .await
+        .into_diagnostic()
+        .context("Running JsonRPC server")
     };
 
     let chainsync_driver = chainsync::run(&config, runtime.clone(), cancel.clone());
@@ -116,6 +120,23 @@ async fn main() -> miette::Result<()> {
         Ok(())
     };
 
-    tokio::try_join!(jsonrpc_server, chainsync_driver, runtime_update)?;
+    let metrics_server = async {
+        tokio::select! {
+            _ = metrics::run(&config, metrics.clone()) => {
+
+            }
+            _ = cancel.cancelled() => {
+                warn!("received cancellation, shutting down metrics server");
+            }
+        };
+        Ok(())
+    };
+
+    tokio::try_join!(
+        jsonrpc_server,
+        chainsync_driver,
+        runtime_update,
+        metrics_server
+    )?;
     Ok(())
 }
