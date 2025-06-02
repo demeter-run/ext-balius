@@ -59,6 +59,49 @@ resource "kubernetes_deployment_v1" "balius" {
           }
 
           env {
+            name = "POSTGRES_PASSWORD"
+            value_from {
+              secret_key_ref {
+                key  = "password"
+                name = "scrolls.${var.postgres_host}.credentials.postgresql.acid.zalan.do"
+              }
+            }
+          }
+
+          env {
+            name  = "POSTGRES_HOST"
+            value = var.postgres_host
+          }
+
+          env {
+            name  = "POSTGRES_USER"
+            value = "scrolls"
+          }
+
+          env {
+            name  = "BALIUSD_CONNECTION"
+            value = "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):5432/balius-${var.network}"
+          }
+
+          env {
+            name = "BALIUSD_POD"
+            value_from {
+              field_ref {
+                field_path = "metadata.name"
+              }
+            }
+          }
+
+          env {
+            name = "BALIUSD_NAMESPACE"
+            value_from {
+              field_ref {
+                field_path = "metadata.namespace"
+              }
+            }
+          }
+
+          env {
             name = "AWS_REGION"
             value_from {
               secret_key_ref {

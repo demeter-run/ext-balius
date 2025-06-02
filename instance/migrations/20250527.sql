@@ -1,0 +1,25 @@
+CREATE TABLE kv (
+  worker VARCHAR(255) NOT NULL,
+  key VARCHAR(255) NOT NULL,
+  value BYTEA,
+  PRIMARY KEY (worker, key)
+);
+
+CREATE TABLE logs (
+  id BIGSERIAL PRIMARY KEY,
+  timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  worker VARCHAR(100) NOT NULL,
+  level VARCHAR(50) NOT NULL,
+  message TEXT NOT NULL,
+  context TEXT NOT NULL
+);
+
+CREATE TABLE cursors (
+    worker VARCHAR(100) PRIMARY KEY,
+    logseq BIGINT NOT NULL
+);
+
+CREATE TABLE wal (
+    logseq BIGINT PRIMARY KEY,
+    logentry BYTEA NOT NULL
+);
