@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 /// Postgres backend for Key Value interface.
 ///
 ///
@@ -21,17 +19,13 @@ use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use tokio_postgres::NoTls;
 
-use crate::metrics::Metrics;
-
 pub struct PostgresLogger {
     pool: Pool<PostgresConnectionManager<NoTls>>,
-    metrics: Arc<Metrics>,
 }
-impl From<(&Pool<PostgresConnectionManager<NoTls>>, &Arc<Metrics>)> for PostgresLogger {
-    fn from(value: (&Pool<PostgresConnectionManager<NoTls>>, &Arc<Metrics>)) -> Self {
+impl From<&Pool<PostgresConnectionManager<NoTls>>> for PostgresLogger {
+    fn from(value: &Pool<PostgresConnectionManager<NoTls>>) -> Self {
         Self {
-            pool: value.0.clone(),
-            metrics: value.1.clone(),
+            pool: value.clone(),
         }
     }
 }
@@ -55,8 +49,6 @@ impl LoggerProvider for PostgresLogger {
             Level::Warn => "WARN",
             Level::Critical => "CRITICAL",
         };
-
-        self.metrics.log(worker_id, level);
 
         if let Err(err) = conn
             .query(

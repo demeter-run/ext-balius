@@ -1,8 +1,9 @@
 use balius_runtime::{ledgers, Runtime, Store};
 use kv::PostgresKv;
 use logging::PostgresLogger;
-use metrics::Metrics;
+use metrics::init_meter_provider;
 use miette::{Context, IntoDiagnostic as _};
+use prometheus::Registry;
 use std::{str::FromStr, sync::Arc};
 use store::PostgresStore;
 use tokio::sync::Mutex;
@@ -52,12 +53,12 @@ async fn main() -> miette::Result<()> {
         .install_default()
         .expect("Failed to install default provider");
     tracing_subscriber::fmt().with_max_level(Level::INFO).init();
+    let registry = Registry::new();
+    init_meter_provider(registry.clone())?;
 
     let config: config::Config = config::load_config(&None)
         .into_diagnostic()
         .context("loading config")?;
-
-    let metrics = Arc::new(Metrics::try_new()?);
 
     let pg_mgr = bb8_postgres::PostgresConnectionManager::new(
         tokio_postgres::config::Config::from_str(&config.connection)
@@ -83,10 +84,10 @@ async fn main() -> miette::Result<()> {
     let runtime = Runtime::builder(store)
         .with_ledger(ledger.into())
         .with_kv(balius_runtime::kv::Kv::Custom(Arc::new(Mutex::new(
-            PostgresKv::from((&pool, &metrics)),
+            PostgresKv::from(&pool),
         ))))
         .with_logger(balius_runtime::logging::Logger::Custom(Arc::new(
-            Mutex::new(PostgresLogger::from((&pool, &metrics))),
+            Mutex::new(PostgresLogger::from(&pool)),
         )))
         .build()
         .into_diagnostic()
@@ -95,15 +96,10 @@ async fn main() -> miette::Result<()> {
     let cancel = hook_exit_token();
 
     let jsonrpc_server = async {
-        server::serve(
-            config.rpc.clone(),
-            runtime.clone(),
-            metrics.clone(),
-            cancel.clone(),
-        )
-        .await
-        .into_diagnostic()
-        .context("Running JsonRPC server")
+        server::serve(config.rpc.clone(), runtime.clone(), cancel.clone())
+            .await
+            .into_diagnostic()
+            .context("Running JsonRPC server")
     };
 
     let chainsync_driver = chainsync::run(&config, runtime.clone(), cancel.clone());
@@ -122,7 +118,7 @@ async fn main() -> miette::Result<()> {
 
     let metrics_server = async {
         tokio::select! {
-            _ = metrics::run(&config, metrics.clone()) => {
+            _ = metrics::run(&config, registry.clone()) => {
 
             }
             _ = cancel.cancelled() => {

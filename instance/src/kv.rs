@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 /// Postgres backend for Key Value interface.
 ///
 ///
@@ -22,18 +20,14 @@ use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use tokio_postgres::NoTls;
 
-use crate::metrics::Metrics;
-
 pub struct PostgresKv {
     pool: Pool<PostgresConnectionManager<NoTls>>,
-    metrics: Arc<Metrics>,
 }
 
-impl From<(&Pool<PostgresConnectionManager<NoTls>>, &Arc<Metrics>)> for PostgresKv {
-    fn from(value: (&Pool<PostgresConnectionManager<NoTls>>, &Arc<Metrics>)) -> Self {
+impl From<&Pool<PostgresConnectionManager<NoTls>>> for PostgresKv {
+    fn from(value: &Pool<PostgresConnectionManager<NoTls>>) -> Self {
         Self {
-            pool: value.0.clone(),
-            metrics: value.1.clone(),
+            pool: value.clone(),
         }
     }
 }
@@ -41,7 +35,6 @@ impl From<(&Pool<PostgresConnectionManager<NoTls>>, &Arc<Metrics>)> for Postgres
 #[async_trait::async_trait]
 impl KvProvider for PostgresKv {
     async fn get_value(&mut self, worker_id: &str, key: String) -> Result<Payload, KvError> {
-        self.metrics.kvget(worker_id);
         let conn = self
             .pool
             .get()
@@ -66,7 +59,6 @@ impl KvProvider for PostgresKv {
         key: String,
         value: Payload,
     ) -> Result<(), KvError> {
-        self.metrics.kvset(worker_id);
         let conn = self
             .pool
             .get()
@@ -92,7 +84,6 @@ impl KvProvider for PostgresKv {
         worker_id: &str,
         prefix: String,
     ) -> Result<Vec<String>, KvError> {
-        self.metrics.kvlist(worker_id);
         let conn = self
             .pool
             .get()

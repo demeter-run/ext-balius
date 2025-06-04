@@ -20,6 +20,6 @@ CREATE TABLE cursors (
 );
 
 CREATE TABLE wal (
-    logseq BIGINT PRIMARY KEY,
+    logseq BIGSERIAL PRIMARY KEY,
     logentry BYTEA NOT NULL
 );
