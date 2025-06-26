@@ -85,7 +85,7 @@ resource "kubernetes_deployment_v1" "balius" {
 
           env {
             name  = "BALIUSD_CONNECTION"
-            value = "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):5432/${replace(var.network, "-", "")}"
+            value = "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):5432/balius"
           }
 
           env {

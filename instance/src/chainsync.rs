@@ -27,13 +27,13 @@ pub async fn run(
             .into_diagnostic()
             .context("failed to create kube client")?;
 
-        let holder_id = format!("shared-lease-{}", config.pod);
+        let holder_id = format!("shard-{}-pod-{}", config.shard, config.pod);
         let leadership = LeaseLock::new(
             client,
             &config.namespace,
             LeaseLockParams {
                 holder_id,
-                lease_name: config.lease_name.clone(),
+                lease_name: config.shard.clone(),
                 lease_ttl: Duration::from_secs(config.lease_ttl_seconds.unwrap_or(10)),
             },
         );

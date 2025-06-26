@@ -74,7 +74,10 @@ async fn main() -> miette::Result<()> {
         .into_diagnostic()
         .context("failed to build pool")?;
 
-    let store = Store::Custom(Arc::new(Mutex::new(PostgresStore::new(&pool))));
+    let store = Store::Custom(Arc::new(Mutex::new(PostgresStore::new(
+        &pool,
+        &config.shard,
+    ))));
 
     let ledger = ledgers::u5c::Ledger::new(&config.ledger)
         .await

@@ -55,7 +55,7 @@ resource "kubernetes_manifest" "postgres" {
         "service.beta.kubernetes.io/aws-load-balancer-type"            = "external"
       }
       "databases" = {
-        for network in var.networks : replace(network, "-", "") => "balius"
+        "balius" : "balius"
       }
       "postgresql" = {
         "version"    = "14"

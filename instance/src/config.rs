@@ -11,7 +11,7 @@ pub struct Config {
     pub max_pool_size: Option<u32>,
     pub namespace: String,
     pub pod: String,
-    pub lease_name: String,
+    pub shard: String,
     pub lease_ttl_seconds: Option<u64>,
     pub lease_renew_seconds: Option<u64>,
     pub rpc: drivers::jsonrpc::Config,

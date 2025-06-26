@@ -28,11 +28,15 @@ use tokio_postgres::NoTls;
 
 pub struct PostgresStore {
     pool: Pool<PostgresConnectionManager<NoTls>>,
+    shard: String,
 }
 
 impl PostgresStore {
-    pub fn new(pool: &Pool<PostgresConnectionManager<NoTls>>) -> Self {
-        Self { pool: pool.clone() }
+    pub fn new(pool: &Pool<PostgresConnectionManager<NoTls>>, shard: &str) -> Self {
+        Self {
+            pool: pool.clone(),
+            shard: shard.to_string(),
+        }
     }
 }
 
@@ -45,8 +49,8 @@ impl StoreTrait for PostgresStore {
             })?;
         match conn
             .query_opt(
-                "SELECT logentry FROM wal WHERE logseq = $1::BIGINT",
-                &[&(seq as i64)],
+                "SELECT logentry FROM wal WHERE logseq = $1::BIGINT AND shard = $2::TEXT",
+                &[&(seq as i64), &self.shard],
             )
             .await
             .map_err(|err| Error::Store(format!("Failed to query store: {}", err)))?
@@ -78,10 +82,10 @@ impl StoreTrait for PostgresStore {
             })?;
         match conn
             .query_opt(
-                "INSERT INTO wal (logentry)
-                 VALUES ($1::BYTEA)
+                "INSERT INTO wal (logentry, shard)
+                 VALUES ($1::BYTEA, $2::TEXT)
                  RETURNING logseq;",
-                &[&entry.encode_to_vec()],
+                &[&entry.encode_to_vec(), &self.shard],
             )
             .await
             .map_err(|err| Error::Store(format!("Failed to query store: {}", err)))?
@@ -100,7 +104,10 @@ impl StoreTrait for PostgresStore {
                 Error::Store(format!("failed to get connection for store: {}", err))
             })?;
         match conn
-            .query_opt("SELECT logseq FROM cursors WHERE worker = $1::TEXT", &[&id])
+            .query_opt(
+                "SELECT logseq FROM cursors WHERE worker = $1::TEXT AND shard = $2::TEXT",
+                &[&id, &self.shard],
+            )
             .await
             .map_err(|err| Error::Store(format!("Failed to query store: {}", err)))?
         {
@@ -114,7 +121,7 @@ impl StoreTrait for PostgresStore {
 
     async fn start_atomic_update(&self, log_seq: LogSeq) -> Result<AtomicUpdate, Error> {
         Ok(AtomicUpdate::Custom(Arc::new(Mutex::new(
-            PostgresAtomicUpdate::new(&self.pool, log_seq),
+            PostgresAtomicUpdate::new(&self.pool, log_seq, &self.shard),
         ))))
     }
 }
@@ -123,13 +130,19 @@ pub struct PostgresAtomicUpdate {
     cache: BTreeSet<String>,
     pool: Pool<PostgresConnectionManager<NoTls>>,
     log_seq: LogSeq,
+    shard: String,
 }
 impl PostgresAtomicUpdate {
-    pub fn new(pool: &Pool<PostgresConnectionManager<NoTls>>, log_seq: LogSeq) -> Self {
+    pub fn new(
+        pool: &Pool<PostgresConnectionManager<NoTls>>,
+        log_seq: LogSeq,
+        shard: &str,
+    ) -> Self {
         Self {
             pool: pool.clone(),
             log_seq,
             cache: Default::default(),
+            shard: shard.to_string(),
         }
     }
 }
@@ -156,11 +169,11 @@ impl AtomicUpdateTrait for PostgresAtomicUpdate {
         for worker in &self.cache {
             let _ = txn
                 .query(
-                    "INSERT INTO cursors (worker, logseq)
-                 VALUES ($1::TEXT, $2::BIGINT)
+                    "INSERT INTO cursors (worker, logseq, shard)
+                 VALUES ($1::TEXT, $2::BIGINT, $3::TEXT)
                  ON CONFLICT (worker) 
                  DO UPDATE SET logseq = EXCLUDED.logseq;",
-                    &[&worker, &(self.log_seq as i64)],
+                    &[&worker, &(self.log_seq as i64), &self.shard],
                 )
                 .await
                 .map_err(|err| Error::Store(format!("failed to query store: {}", err)))?;

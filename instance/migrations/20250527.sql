@@ -16,10 +16,12 @@ CREATE TABLE logs (
 
 CREATE TABLE cursors (
     worker VARCHAR(100) PRIMARY KEY,
+    shard VARCHAR(100) PRIMARY KEY,
     logseq BIGINT NOT NULL
 );
 
 CREATE TABLE wal (
     logseq BIGSERIAL PRIMARY KEY,
+    shard VARCHAR(100) PRIMARY KEY,
     logentry BYTEA NOT NULL
 );
