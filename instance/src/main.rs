@@ -4,6 +4,7 @@ use logging::PostgresLogger;
 use metrics::init_meter_provider;
 use miette::{Context, IntoDiagnostic as _};
 use prometheus::Registry;
+use signer::VaultSigner;
 use std::{str::FromStr, sync::Arc};
 use store::PostgresStore;
 use tokio::sync::Mutex;
@@ -17,6 +18,7 @@ mod logging;
 mod metrics;
 mod runtime;
 mod server;
+mod signer;
 mod store;
 
 async fn wait_for_exit_signal() {
@@ -86,6 +88,9 @@ async fn main() -> miette::Result<()> {
 
     let runtime = Runtime::builder(store)
         .with_ledger(ledger.into())
+        .with_signer(balius_runtime::sign::Signer::Custom(Arc::new(Mutex::new(
+            VaultSigner::try_new(&config.vault_address, &config.vault_token)?,
+        ))))
         .with_kv(balius_runtime::kv::Kv::Custom(Arc::new(Mutex::new(
             PostgresKv::from(&pool),
         ))))

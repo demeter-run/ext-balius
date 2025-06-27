@@ -10,6 +10,7 @@ aws-sdk-s3 = "1.79.0"
 balius-runtime = { git = "https://github.com/gonzalezzfelipe/balius.git", branch = "feat/allow-custom-stores", features = ["http", "aws"] }
 # balius-runtime = { git = "https://github.com/txpipe/balius.git", features = ["http", "aws"] }
 # balius-runtime = { path = "../../balius/balius-runtime", features = ["http", "aws"] }
+base64 = "0.22.1"
 bb8 = "0.9.0"
 bb8-postgres = "0.9.0"
 config = { version = "0.15.9", default-features = false, features = ["toml", "json"] }
@@ -37,4 +38,5 @@ tokio-util = "0.7.13"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 url = "2.5.4"
+vaultrs = { git = "https://github.com/jmgilman/vaultrs", rev = "45833fe9c92051b6d61b1f6bf9b8ca76919759a4" }
 warp = { version = "0.3.7" }

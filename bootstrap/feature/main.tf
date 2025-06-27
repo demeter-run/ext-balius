@@ -68,3 +68,33 @@ variable "resources" {
     }
   }
 }
+
+variable "vault_chart" {
+  description = "Name of the Vault Helm chart"
+  type        = string
+  default     = "vault"
+}
+
+variable "vault_chart_repository" {
+  description = "Helm repository URL for the Vault chart"
+  type        = string
+  default     = "https://helm.releases.hashicorp.com"
+}
+
+variable "vault_tolerations" {
+  description = "Tolerations for the Vault server pods"
+  type = list(object({
+    effect   = string
+    key      = string
+    operator = string
+    value    = optional(string)
+  }))
+  default = [
+    {
+      effect   = "NoSchedule"
+      key      = "demeter.run/availability-sla"
+      operator = "Equal"
+      value    = "consistent"
+    }
+  ]
+}

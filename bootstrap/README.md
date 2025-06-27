@@ -43,6 +43,8 @@ The main `main.tf` file in the root directory orchestrates the deployment of the
     dns_names = ["my-service.demeter.run"]
     operator_image_tag = "latest"
     proxy_image_tag = "latest"
+    vault_chart = "vault"
+    vault_chart_repository = "https://helm.releases.hashicorp.com"
 
     instances = {
       instance1 = {
@@ -101,6 +103,9 @@ The main `main.tf` file in the root directory orchestrates the deployment of the
     * `proxy_replicas`: The number of proxy replicas (default: `1`).
     * `proxy_resources`: Resource limits and requests for the proxy (default provided in `variables.tf`).
     * `proxy_tolerations`: Tolerations for the proxy (default provided in `variables.tf`).
+    * `vault_chart`: The name of the Vault Helm chart (default: `vault`).
+    * `vault_chart_repository`: The Helm repository URL for the Vault chart (default: `https://helm.releases.hashicorp.com`).
+    * `vault_tolerations`: Tolerations for the Vault server pods (default provided in `feature/main.tf`).
     * `instances[].replicas`: The number of replicas for each instance (default: `1`).
     * `instances[].resources`: Resource limits and requests for each instance (default provided in `main.tf`).
     * `instances[].tolerations`: Tolerations for each instance (default provided in `main.tf`).

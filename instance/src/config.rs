@@ -18,6 +18,8 @@ pub struct Config {
     pub ledger: ledgers::u5c::Config,
     pub chainsync: drivers::chainsync::Config,
     pub prometheus_addr: SocketAddr,
+    pub vault_address: String,
+    pub vault_token: String,
 }
 
 pub fn load_config<T>(explicit_file: &Option<std::path::PathBuf>) -> Result<T, config::ConfigError>
