@@ -110,6 +110,7 @@ async fn main() -> miette::Result<()> {
             .context("Running JsonRPC server")
     };
 
+    let token_renewer = signer::run(&config, cancel.clone());
     let chainsync_driver = chainsync::run(&config, runtime.clone(), cancel.clone());
 
     let runtime_update = async {
@@ -140,7 +141,8 @@ async fn main() -> miette::Result<()> {
         jsonrpc_server,
         chainsync_driver,
         runtime_update,
-        metrics_server
+        metrics_server,
+        token_renewer
     )?;
     Ok(())
 }

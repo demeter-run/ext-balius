@@ -69,20 +69,22 @@ variable "resources" {
   }
 }
 
+variable "vault_cert_secret_name" {
+  type    = string
+  default = "vault-tls"
+}
+
 variable "vault_chart" {
-  description = "Name of the Vault Helm chart"
-  type        = string
-  default     = "vault"
+  type    = string
+  default = "vault"
 }
 
 variable "vault_chart_repository" {
-  description = "Helm repository URL for the Vault chart"
-  type        = string
-  default     = "https://helm.releases.hashicorp.com"
+  type    = string
+  default = "https://helm.releases.hashicorp.com"
 }
 
 variable "vault_tolerations" {
-  description = "Tolerations for the Vault server pods"
   type = list(object({
     effect   = string
     key      = string
@@ -92,9 +94,34 @@ variable "vault_tolerations" {
   default = [
     {
       effect   = "NoSchedule"
+      key      = "demeter.run/compute-profile"
+      operator = "Exists"
+    },
+    {
+      effect   = "NoSchedule"
+      key      = "demeter.run/compute-arch"
+      operator = "Exists"
+    },
+    {
+      effect   = "NoSchedule"
       key      = "demeter.run/availability-sla"
       operator = "Equal"
       value    = "consistent"
     }
   ]
+}
+
+variable "aws_region" {
+  type    = string
+  default = "us-west-2"
+}
+
+variable "vault_credentials_secret_name" {
+  type    = string
+  default = "vault-kms-credentials"
+}
+
+variable "vault_kms_key_deletion_window_days" {
+  type    = number
+  default = 30
 }

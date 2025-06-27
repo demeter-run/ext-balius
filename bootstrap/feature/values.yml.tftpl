@@ -1,0 +1,106 @@
+global:
+  tlsDisable: false
+
+injector:
+  enabled: false
+
+server:
+  standalone:
+    enabled: true
+    config: |
+      ui = true
+      api_addr = "https://vault.vault.svc.cluster.local:8200"
+      cluster_addr = "https://vault.vault.svc.cluster.local:8201"
+
+      listener "tcp" {
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+        tls_disable = false
+        tls_cert_file = "/vault/tls/tls.crt"
+        tls_key_file  = "/vault/tls/tls.key"
+      }
+
+      storage "file" {
+        path = "/vault/data"
+      }
+
+      seal "awskms" {
+        kms_key_id = "${aws_kms_key_id}"
+        region = "${aws_region}"
+      }
+
+  replicas: 1
+  ha:
+    enabled: false
+
+  volumes:
+    - name: vault-tls
+      secret:
+        defaultMode: 420
+        secretName: ${vault_cert_secret_name}
+
+  volumeMounts:
+    - mountPath: /vault/tls
+      name: vault-tls
+      readOnly: true
+
+  dataVolumeClaim:
+    enabled: true
+    size: 10Gi
+    storageClass: fast
+
+  extraSecretEnvironmentVars:
+    - secretName: ${vault_credentials_secret_name}
+      secretKey: aws_access_key_id
+      envName: AWS_ACCESS_KEY_ID
+    - secretName: ${vault_credentials_secret_name}
+      secretKey: aws_secret_access_key
+      envName: AWS_SECRET_ACCESS_KEY
+
+  service:
+    type: ClusterIP
+
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+  tolerations:
+    - effect: NoSchedule
+      key: demeter.run/compute-profile
+      operator: Exists
+    - effect: NoSchedule
+      key: demeter.run/compute-arch
+      operator: Exists
+    - effect: NoSchedule
+      key: demeter.run/availability-sla
+      operator: Equal
+      value: consistent
+
+  startupProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 60 # Allow enough time for unseal if it's the first startup
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+ui:
+  enabled: true
+  serviceType: ClusterIP

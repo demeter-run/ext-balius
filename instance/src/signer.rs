@@ -1,17 +1,18 @@
-/// Vault backend for Signer interface.
-///
-///
-/// This uses the transit API available on Vault to create keys / sign payloads without having
-/// access to the private keys.
 use balius_runtime::sign::SignerProvider;
 use balius_runtime::wit::balius::app::sign as wit;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use miette::{Context, IntoDiagnostic};
+use std::time::Duration;
+use tokio_util::sync::CancellationToken;
+use tracing::instrument;
 use vaultrs::api::transit::requests::{CreateKeyRequest, ExportKeyType, ExportVersion};
 use vaultrs::api::transit::KeyType;
 use vaultrs::client::{VaultClient, VaultClientSettingsBuilder};
 use vaultrs::error::ClientError;
+use vaultrs::token;
 use vaultrs::transit::{data, key};
+
+use super::config::Config;
 
 pub struct VaultSigner {
     client: VaultClient,
@@ -23,6 +24,7 @@ impl VaultSigner {
             VaultClientSettingsBuilder::default()
                 .address(address)
                 .token(token)
+                .verify(false)
                 .build()
                 .into_diagnostic()
                 .context("creating vault client settings")?,
@@ -115,5 +117,37 @@ impl SignerProvider for VaultSigner {
         STANDARD
             .decode(response.signature.replace("vault:v1:", ""))
             .map_err(|err| wit::SignError::Internal(err.to_string()))
+    }
+}
+
+#[instrument("vault-token-renewer", skip_all)]
+pub async fn run(config: &Config, cancel: CancellationToken) -> miette::Result<()> {
+    // Create a client
+    let client = VaultClient::new(
+        VaultClientSettingsBuilder::default()
+            .address(&config.vault_address)
+            .token(&config.vault_token)
+            .verify(false)
+            .build()
+            .into_diagnostic()
+            .context("creating vault client settings")?,
+    )
+    .into_diagnostic()
+    .context("creating vault client")?;
+
+    loop {
+        tokio::select! {
+            _ = tokio::time::sleep(Duration::from_secs(config.vault_token_renew_seconds)) => {
+                let response = token::renew_self(
+                    &client,
+                    Some(config.vault_token_renew_increment.as_ref().map_or("1h", |v| v))
+                ).await.into_diagnostic().context("renewing vault token")?;
+                tracing::debug!(response =? response,  "vault token renewed");
+            }
+            _ = cancel.cancelled() => {
+                tracing::warn!("received cancellation");
+                return Ok(())
+            }
+        }
     }
 }
