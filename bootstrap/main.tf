@@ -55,6 +55,8 @@ module "instances" {
   salt                    = each.value.salt
   network                 = each.value.network
   utxorpc_url             = each.value.utxorpc_url
+  vault_token             = each.value.vault_token
+  vault_address           = each.value.vault_address
   replicas                = coalesce(each.value.replicas, 1)
   credentials_secret_name = "demeter-workers-credentials"
   postgres_name           = local.postgres_name

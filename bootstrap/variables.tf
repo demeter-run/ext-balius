@@ -184,11 +184,13 @@ variable "proxy_tolerations" {
 
 variable "instances" {
   type = map(object({
-    image       = string
-    salt        = string
-    network     = string
-    utxorpc_url = string
-    replicas    = optional(number)
+    image         = string
+    salt          = string
+    network       = string
+    utxorpc_url   = string
+    vault_address = string
+    vault_token   = string
+    replicas      = optional(number)
     resources = optional(object({
       limits = object({
         cpu    = string

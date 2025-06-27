@@ -14,6 +14,24 @@ variable "network" {
   type = string
 }
 
+variable "vault_address" {
+  type = string
+}
+
+variable "vault_token" {
+  type = string
+}
+
+variable "vault_token_renew_seconds" {
+  type    = number
+  default = 600
+}
+
+variable "vault_token_renew_interval" {
+  type    = string
+  default = "24h"
+}
+
 variable "utxorpc_url" {
   type = string
 }

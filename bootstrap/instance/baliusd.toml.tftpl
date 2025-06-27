@@ -1,6 +1,10 @@
 network = "${ network }"
 shard = "balius-${ network }"
 prometheus_addr = "0.0.0.0:${ prometheus_port }"
+vault_address = "${ vault_address }"
+vault_token = "${ vault_token }"
+vault_token_renew_seconds = ${ vault_token_renew_seconds }
+vault_token_renew_interval = "${ vault_token_renew_interval }"
 
 [rpc]
 listen_address = "0.0.0.0:${ container_port }"
