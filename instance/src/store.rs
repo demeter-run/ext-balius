@@ -171,7 +171,7 @@ impl AtomicUpdateTrait for PostgresAtomicUpdate {
                 .query(
                     "INSERT INTO cursors (worker, logseq, shard)
                  VALUES ($1::TEXT, $2::BIGINT, $3::TEXT)
-                 ON CONFLICT (worker) 
+                 ON CONFLICT (worker, shard) 
                  DO UPDATE SET logseq = EXCLUDED.logseq;",
                     &[&worker, &(self.log_seq as i64), &self.shard],
                 )

@@ -15,13 +15,15 @@ CREATE TABLE logs (
 );
 
 CREATE TABLE cursors (
-    worker VARCHAR(100) PRIMARY KEY,
-    shard VARCHAR(100) PRIMARY KEY,
-    logseq BIGINT NOT NULL
+    worker VARCHAR(100) NOT NULL,
+    shard VARCHAR(100) NOT NULL,
+    logseq BIGINT NOT NULL,
+    PRIMARY KEY (worker, shard)
 );
 
 CREATE TABLE wal (
-    logseq BIGSERIAL PRIMARY KEY,
-    shard VARCHAR(100) PRIMARY KEY,
-    logentry BYTEA NOT NULL
+    logseq BIGSERIAL NOT NULL,
+    shard VARCHAR(100) NOT NULL,
+    logentry BYTEA NOT NULL,
+    PRIMARY KEY (logseq, shard)
 );

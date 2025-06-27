@@ -693,7 +693,7 @@ dependencies = [
 [[package]]
 name = "balius-runtime"
 version = "0.3.4"
-source = "git+https://github.com/gonzalezzfelipe/balius.git?branch=feat%2Fallow-custom-stores#ff49ac62a865388df23f4b28633dd4fed21cca3c"
+source = "git+https://github.com/gonzalezzfelipe/balius.git?branch=feat%2Fallow-custom-stores#e6cb82132cbfb380cd800bce66b6db473ba29c14"
 dependencies = [
  "async-trait",
  "chrono",

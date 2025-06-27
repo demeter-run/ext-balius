@@ -76,11 +76,7 @@ pub async fn update_runtime(config: &Config, runtime: Runtime) -> miette::Result
                                 .register_worker(&name, &bytes, Value::Object(crd.spec.config))
                                 .await
                             {
-                                error!(
-                                    err = err.to_string(),
-                                    worker = name,
-                                    "Error registering worker"
-                                );
+                                error!(err =? err, worker = name, "Error registering worker");
                             }
                         }
                         Err(err) => {
@@ -112,7 +108,7 @@ pub async fn update_runtime(config: &Config, runtime: Runtime) -> miette::Result
                                 .await
                             {
                                 error!(
-                                    err = err.to_string(),
+                                    err =? err,
                                     worker = name,
                                     "Error registering worker"
                                 );
