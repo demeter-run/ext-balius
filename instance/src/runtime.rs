@@ -94,35 +94,23 @@ pub async fn update_runtime(config: &Config, runtime: Runtime) -> miette::Result
 
             Ok(Some(Event::Apply(crd))) => {
                 let name = crd.name_any();
-
                 if crd.spec.network == config.network {
-                    info!("Applying worker: {}", &name);
-                    match url::Url::parse(&crd.spec.url) {
-                        Ok(module) => {
+                    info!("Registering worker: {}", &name);
+                    match download_s3_object(&crd.spec.url).await {
+                        Ok(bytes) => {
                             if let Err(err) = runtime
-                                .register_worker_from_url(
-                                    &name,
-                                    &module,
-                                    Value::Object(crd.spec.config),
-                                )
+                                .register_worker(&name, &bytes, Value::Object(crd.spec.config))
                                 .await
                             {
-                                error!(
-                                    err =? err,
-                                    worker = name,
-                                    "Error registering worker"
-                                );
+                                error!(err =? err, worker = name, "Error registering worker");
                             }
                         }
                         Err(err) => {
-                            error!(
-                                err = err.to_string(),
-                                "Failed to parse URL for worker: {}", name
-                            );
+                            error!(err = err.to_string(), "Failed to register worker: {}", name);
                         }
                     };
                 } else {
-                    info!("Applied CRD doesn't match network: {}", &name);
+                    info!("New CRD doesn't match network: {}", &name);
                 }
             }
 
