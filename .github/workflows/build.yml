@@ -109,6 +109,10 @@ jobs:
           merge-multiple: true
           path: .github/image/bin
 
+      # Add docker layer caching to avoid doing extra computation
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
+
       # we need to rename the artifact so that the name matches
       # the value that Docker uses for TARGET_ARCH to keep the
       # Dockerfile simple
