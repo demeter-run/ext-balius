@@ -1,6 +1,6 @@
 # ed25519-signer-policy.hcl
 path "transit/keys/*" {
-  capabilities = ["create", "update"]
+  capabilities = ["create", "update", "list"]
 }
 
 path "transit/export/public-key/*" {
