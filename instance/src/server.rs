@@ -7,6 +7,8 @@ use warp::Filter as _;
 
 use balius_runtime::{wit, Error, Runtime};
 
+use crate::runtime::FailedWorkers;
+
 #[derive(Deserialize)]
 struct Request {
     pub id: Option<String>,
@@ -29,10 +31,18 @@ fn parse_request(body: serde_json::Value) -> Result<Request, ErrorResponse> {
 }
 
 pub async fn handle_request(
-    runtime: Runtime,
+    state: (Runtime, FailedWorkers),
     worker: String,
     body: serde_json::Value,
 ) -> warp::reply::Json {
+    let (runtime, failed) = state;
+
+    if let Some(reason) = failed.read(&worker).await {
+        return warp::reply::json(&ErrorResponse {
+            error: format!("failed to load into runtime: {reason}"),
+        });
+    }
+
     let request = match parse_request(body) {
         Ok(x) => x,
         Err(err) => return warp::reply::json(&err),
@@ -76,10 +86,11 @@ pub async fn handle_request(
 pub async fn serve(
     config: balius_runtime::drivers::jsonrpc::Config,
     runtime: Runtime,
+    failed: FailedWorkers,
     cancel: CancellationToken,
 ) -> Result<(), Error> {
     let filter = warp::any()
-        .map(move || runtime.clone())
+        .map(move || (runtime.clone(), failed.clone()))
         .and(warp::path::param())
         .and(warp::post())
         .and(warp::body::json())

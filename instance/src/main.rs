@@ -4,6 +4,7 @@ use logging::PostgresLogger;
 use metrics::init_meter_provider;
 use miette::{Context, IntoDiagnostic as _};
 use prometheus::Registry;
+use runtime::FailedWorkers;
 use signer::VaultSigner;
 use std::{str::FromStr, sync::Arc};
 use store::PostgresStore;
@@ -86,6 +87,7 @@ async fn main() -> miette::Result<()> {
         .into_diagnostic()
         .context("setting up ledger")?;
 
+    let failed = FailedWorkers::default();
     let runtime = Runtime::builder(store)
         .with_ledger(ledger.into())
         .with_signer(balius_runtime::sign::Signer::Custom(Arc::new(Mutex::new(
@@ -104,10 +106,15 @@ async fn main() -> miette::Result<()> {
     let cancel = hook_exit_token();
 
     let jsonrpc_server = async {
-        server::serve(config.rpc.clone(), runtime.clone(), cancel.clone())
-            .await
-            .into_diagnostic()
-            .context("Running JsonRPC server")
+        server::serve(
+            config.rpc.clone(),
+            runtime.clone(),
+            failed.clone(),
+            cancel.clone(),
+        )
+        .await
+        .into_diagnostic()
+        .context("Running JsonRPC server")
     };
 
     let token_renewer = signer::run(&config, cancel.clone());
@@ -115,7 +122,7 @@ async fn main() -> miette::Result<()> {
 
     let runtime_update = async {
         tokio::select! {
-            _ = runtime::update_runtime(&config, runtime.clone()) => {
+            _ = runtime::update_runtime(&config, runtime.clone(), failed.clone()) => {
 
             }
             _ = cancel.cancelled() => {

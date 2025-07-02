@@ -1,3 +1,5 @@
+use std::{collections::HashMap, sync::Arc};
+
 use aws_sdk_s3::Client as S3Client;
 use balius_runtime::Runtime;
 use futures_util::TryStreamExt;
@@ -10,11 +12,30 @@ use operator::{
     BaliusWorker,
 };
 use serde_json::Value;
-use tokio::pin;
+use tokio::{pin, sync::RwLock};
 use tracing::{error, info, instrument};
 use url::Url;
 
 use crate::config::Config;
+
+#[derive(Default, Clone, Debug)]
+pub struct FailedWorkers(Arc<RwLock<HashMap<String, String>>>);
+impl FailedWorkers {
+    pub async fn add(&self, worker_id: &str, reason: &str) {
+        self.0
+            .write()
+            .await
+            .insert(worker_id.to_string(), reason.to_string());
+    }
+
+    pub async fn remove(&self, worker_id: &str) {
+        self.0.write().await.remove(worker_id);
+    }
+
+    pub async fn read(&self, worker_id: &str) -> Option<String> {
+        self.0.read().await.get(worker_id).map(|x| x.to_owned())
+    }
+}
 
 async fn download_s3_object(s3_url: &str) -> miette::Result<Vec<u8>> {
     let url = Url::parse(s3_url)
@@ -30,7 +51,7 @@ async fn download_s3_object(s3_url: &str) -> miette::Result<Vec<u8>> {
     let config = aws_config::load_defaults(aws_config::BehaviorVersion::latest()).await;
     let client = S3Client::new(&config);
 
-    info!(bucket = bucket, key = key, "Donwloading object...");
+    info!(bucket = bucket, key = key, "Downloading object...");
     let resp = client
         .get_object()
         .bucket(bucket)
@@ -50,7 +71,11 @@ async fn download_s3_object(s3_url: &str) -> miette::Result<Vec<u8>> {
 }
 
 #[instrument("crdwatcher", skip_all)]
-pub async fn update_runtime(config: &Config, runtime: Runtime) -> miette::Result<()> {
+pub async fn update_runtime(
+    config: &Config,
+    runtime: Runtime,
+    failed: FailedWorkers,
+) -> miette::Result<()> {
     let client = Client::try_default()
         .await
         .expect("failed to create kube client");
@@ -76,10 +101,12 @@ pub async fn update_runtime(config: &Config, runtime: Runtime) -> miette::Result
                                 .register_worker(&name, &bytes, Value::Object(crd.spec.config))
                                 .await
                             {
+                                failed.add(&name, &err.to_string()).await;
                                 error!(err =? err, worker = name, "Error registering worker");
                             }
                         }
                         Err(err) => {
+                            failed.add(&name, &err.to_string()).await;
                             error!(err = err.to_string(), "Failed to register worker: {}", name);
                         }
                     };
@@ -102,11 +129,15 @@ pub async fn update_runtime(config: &Config, runtime: Runtime) -> miette::Result
                                 .register_worker(&name, &bytes, Value::Object(crd.spec.config))
                                 .await
                             {
+                                failed.add(&name, &err.to_string()).await;
                                 error!(err =? err, worker = name, "Error registering worker");
+                            } else {
+                                failed.remove(&name).await;
                             }
                         }
                         Err(err) => {
                             error!(err = err.to_string(), "Failed to register worker: {}", name);
+                            failed.add(&name, &err.to_string()).await;
                         }
                     };
                 } else {
@@ -121,6 +152,7 @@ pub async fn update_runtime(config: &Config, runtime: Runtime) -> miette::Result
                     .await
                     .into_diagnostic()
                     .context("removing worker from runtime")?;
+                failed.remove(&crd.name_any()).await;
             }
 
             Ok(None) => {
