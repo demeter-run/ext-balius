@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use lazy_static::lazy_static;
 use pingora::Result;
 use pingora::{
     http::ResponseHeader,
@@ -7,6 +8,7 @@ use pingora::{
 };
 use pingora_limits::rate::Rate;
 use regex::Regex;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::info;
 
@@ -14,6 +16,21 @@ use crate::config::Config;
 use crate::{Consumer, State, Tier};
 
 static DMTR_API_KEY: &str = "dmtr-api-key";
+
+lazy_static! {
+    static ref LEGACY_NETWORKS: HashMap<&'static str, String> = {
+        let mut m = HashMap::new();
+        m.insert("mainnet", "cardano-mainnet".into());
+        m.insert("preprod", "cardano-preprod".into());
+        m.insert("preview", "cardano-preview".into());
+        m
+    };
+}
+
+pub fn handle_legacy_networks(network: &str) -> String {
+    let default = network.to_string();
+    LEGACY_NETWORKS.get(network).unwrap_or(&default).to_string()
+}
 
 pub struct BaliusProxy {
     state: Arc<State>,
@@ -138,7 +155,9 @@ impl ProxyHttp for BaliusProxy {
         ctx.consumer = consumer.unwrap();
         ctx.instance = format!(
             "balius-{}.{}:{}",
-            ctx.consumer.network, self.config.balius_dns, self.config.balius_port
+            handle_legacy_networks(&ctx.consumer.network),
+            self.config.balius_dns,
+            self.config.balius_port
         );
 
         // replace existing header if any
