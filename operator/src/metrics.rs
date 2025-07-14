@@ -125,8 +125,7 @@ pub fn run_metrics_collector(state: Arc<State>) {
             if status.is_client_error() || status.is_server_error() {
                 error!(status = status.to_string(), "request status code fail");
                 state.metrics.metrics_failure(&Error::HttpError(format!(
-                    "Prometheus request error. Status: {} Query: {}",
-                    status, query
+                    "Prometheus request error. Status: {status} Query: {query}"
                 )));
                 continue;
             }

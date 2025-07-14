@@ -136,7 +136,7 @@ pub async fn update_runtime(
                             }
                         }
                         Err(err) => {
-                            error!(err = err.to_string(), "Failed to register worker: {}", name);
+                            error!(err = err.to_string(), "Failed to register worker: {name}");
                             failed.add(&name, &err.to_string()).await;
                         }
                     };

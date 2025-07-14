@@ -45,7 +45,7 @@ impl StoreTrait for PostgresStore {
     async fn find_chain_point(&self, seq: LogSeq) -> Result<Option<ChainPoint>, Error> {
         let conn =
             self.pool.get().await.map_err(|err| {
-                Error::Store(format!("failed to get connection for store: {}", err))
+                Error::Store(format!("failed to get connection for store: {err}"))
             })?;
         match conn
             .query_opt(
@@ -53,12 +53,12 @@ impl StoreTrait for PostgresStore {
                 &[&(seq as i64), &self.shard],
             )
             .await
-            .map_err(|err| Error::Store(format!("Failed to query store: {}", err)))?
+            .map_err(|err| Error::Store(format!("Failed to query store: {err}")))?
         {
             Some(row) => {
                 let bytes: Vec<u8> = row.get(0);
                 let entry: LogEntry = prost::Message::decode(bytes.as_slice())
-                    .map_err(|err| Error::Store(format!("Failed to decode logentry: {}", err)))?;
+                    .map_err(|err| Error::Store(format!("Failed to decode logentry: {err}",)))?;
                 let block = Block::from_bytes(&entry.next_block);
 
                 Ok(Some(block.chain_point()))
@@ -78,7 +78,7 @@ impl StoreTrait for PostgresStore {
         };
         let conn =
             self.pool.get().await.map_err(|err| {
-                Error::Store(format!("failed to get connection for store: {}", err))
+                Error::Store(format!("failed to get connection for store: {err}"))
             })?;
         match conn
             .query_opt(
@@ -88,7 +88,7 @@ impl StoreTrait for PostgresStore {
                 &[&entry.encode_to_vec(), &self.shard],
             )
             .await
-            .map_err(|err| Error::Store(format!("Failed to query store: {}", err)))?
+            .map_err(|err| Error::Store(format!("Failed to query store: {err}")))?
         {
             Some(row) => {
                 let seq: i64 = row.get(0);
@@ -101,7 +101,7 @@ impl StoreTrait for PostgresStore {
     async fn get_worker_cursor(&self, id: &str) -> Result<Option<LogSeq>, Error> {
         let conn =
             self.pool.get().await.map_err(|err| {
-                Error::Store(format!("failed to get connection for store: {}", err))
+                Error::Store(format!("failed to get connection for store: {err}"))
             })?;
         match conn
             .query_opt(
@@ -109,7 +109,7 @@ impl StoreTrait for PostgresStore {
                 &[&id, &self.shard],
             )
             .await
-            .map_err(|err| Error::Store(format!("Failed to query store: {}", err)))?
+            .map_err(|err| Error::Store(format!("Failed to query store: {err}")))?
         {
             Some(row) => {
                 let seq: i64 = row.get(0);
@@ -158,13 +158,13 @@ impl AtomicUpdateTrait for PostgresAtomicUpdate {
     async fn commit(&mut self) -> Result<(), Error> {
         let mut conn =
             self.pool.get().await.map_err(|err| {
-                Error::Store(format!("failed to get connection for store: {}", err))
+                Error::Store(format!("failed to get connection for store: {err}"))
             })?;
 
         let txn = conn
             .transaction()
             .await
-            .map_err(|err| Error::Store(format!("failed to get connection for store: {}", err)))?;
+            .map_err(|err| Error::Store(format!("failed to get connection for store: {err}")))?;
 
         for worker in &self.cache {
             let _ = txn
@@ -176,12 +176,12 @@ impl AtomicUpdateTrait for PostgresAtomicUpdate {
                     &[&worker, &(self.log_seq as i64), &self.shard],
                 )
                 .await
-                .map_err(|err| Error::Store(format!("failed to query store: {}", err)))?;
+                .map_err(|err| Error::Store(format!("failed to query store: {err}")))?;
         }
 
         txn.commit()
             .await
-            .map_err(|err| Error::Store(format!("failed to commit transaction: {}", err)))?;
+            .map_err(|err| Error::Store(format!("failed to commit transaction: {err}")))?;
 
         Ok(())
     }

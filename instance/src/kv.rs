@@ -92,7 +92,7 @@ impl KvProvider for PostgresKv {
         match conn
             .query(
                 "SELECT key FROM kv WHERE worker = $1::TEXT AND key LIKE $2::TEXT ORDER BY key",
-                &[&worker_id, &format!("{}%", prefix)],
+                &[&worker_id, &format!("{prefix}%")],
             )
             .await
         {
