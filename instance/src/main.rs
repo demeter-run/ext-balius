@@ -21,6 +21,7 @@ mod runtime;
 mod server;
 mod signer;
 mod store;
+mod utils;
 
 async fn wait_for_exit_signal() {
     let mut sigterm =

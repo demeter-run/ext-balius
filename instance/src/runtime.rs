@@ -16,7 +16,7 @@ use tokio::{pin, sync::RwLock};
 use tracing::{error, info, instrument};
 use url::Url;
 
-use crate::config::Config;
+use crate::{config::Config, utils::handle_legacy_networks};
 
 #[derive(Default, Clone, Debug)]
 pub struct FailedWorkers(Arc<RwLock<HashMap<String, String>>>);
@@ -93,7 +93,7 @@ pub async fn update_runtime(
 
             Ok(Some(Event::InitApply(crd))) => {
                 let name = crd.name_any();
-                if crd.spec.network == config.network {
+                if handle_legacy_networks(&crd.spec.network) == config.network {
                     info!("Registering worker: {}", &name);
                     match download_s3_object(&crd.spec.url).await {
                         Ok(bytes) => {
@@ -121,7 +121,7 @@ pub async fn update_runtime(
 
             Ok(Some(Event::Apply(crd))) => {
                 let name = crd.name_any();
-                if crd.spec.network == config.network {
+                if handle_legacy_networks(&crd.spec.network) == config.network {
                     info!("Registering worker: {}", &name);
                     match download_s3_object(&crd.spec.url).await {
                         Ok(bytes) => {
