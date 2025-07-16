@@ -100,6 +100,7 @@ async fn main() -> miette::Result<()> {
         .with_logger(balius_runtime::logging::Logger::Custom(Arc::new(
             Mutex::new(PostgresLogger::from(&pool)),
         )))
+        .with_http(balius_runtime::http::Http::Reqwest(reqwest::Client::new()))
         .build()
         .into_diagnostic()
         .context("setting up runtime")?;
