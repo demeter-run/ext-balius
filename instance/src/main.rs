@@ -6,7 +6,7 @@ use miette::{Context, IntoDiagnostic as _};
 use prometheus::Registry;
 use runtime::FailedWorkers;
 use signer::VaultSigner;
-use std::{str::FromStr, sync::Arc};
+use std::{str::FromStr, sync::Arc, time::Duration};
 use store::PostgresStore;
 use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
@@ -100,7 +100,14 @@ async fn main() -> miette::Result<()> {
         .with_logger(balius_runtime::logging::Logger::Custom(Arc::new(
             Mutex::new(PostgresLogger::from(&pool)),
         )))
-        .with_http(balius_runtime::http::Http::Reqwest(reqwest::Client::new()))
+        .with_http(balius_runtime::http::Http::Reqwest(
+            reqwest::Client::builder()
+                .timeout(Duration::from_secs(
+                    config.http_client_timeout.unwrap_or(10),
+                ))
+                .build()
+                .expect("failed to build http client"),
+        ))
         .build()
         .into_diagnostic()
         .context("setting up runtime")?;

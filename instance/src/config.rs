@@ -22,6 +22,7 @@ pub struct Config {
     pub vault_token: String,
     pub vault_token_renew_seconds: u64,
     pub vault_token_renew_increment: Option<String>,
+    pub http_client_timeout: Option<u64>,
 }
 
 pub fn load_config<T>(explicit_file: &Option<std::path::PathBuf>) -> Result<T, config::ConfigError>
