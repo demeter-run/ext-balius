@@ -94,7 +94,8 @@ pub async fn serve(
         .and(warp::path::param())
         .and(warp::post())
         .and(warp::body::json())
-        .then(handle_request);
+        .then(handle_request)
+        .with(warp::cors().allow_any_origin());
 
     let address: SocketAddr = config
         .listen_address
