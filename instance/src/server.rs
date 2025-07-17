@@ -98,7 +98,17 @@ pub async fn serve(
         .with(
             warp::cors()
                 .allow_any_origin()
-                .allow_methods(vec!["POST", "OPTIONS"]),
+                .allow_methods(vec!["POST", "OPTIONS"])
+                .allow_headers(vec![
+                    "User-Agent",
+                    "dmtr-api-key",
+                    "Sec-Fetch-Mode",
+                    "Referer",
+                    "Origin",
+                    "Access-Control-Request-Origin",
+                    "Access-Control-Request-Method",
+                    "Access-Control-Request-Headers",
+                ]),
         );
 
     let address: SocketAddr = config
