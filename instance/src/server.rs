@@ -108,7 +108,8 @@ pub async fn serve(
                     "Access-Control-Request-Origin",
                     "Access-Control-Request-Method",
                     "Access-Control-Request-Headers",
-                ]),
+                ])
+                .build(),
         );
 
     let address: SocketAddr = config
