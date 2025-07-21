@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use lazy_static::lazy_static;
+use pingora::http::Method;
 use pingora::Result;
 use pingora::{
     http::ResponseHeader,
@@ -108,6 +109,25 @@ impl BaliusProxy {
         key.to_string()
     }
 
+    async fn respond_options(&self, session: &mut Session, ctx: &mut Context) {
+        ctx.is_health_request = true;
+        session.set_keepalive(None);
+        let mut response = ResponseHeader::build(200, None).unwrap();
+        response
+            .insert_header("Access-Control-Allow-Origin", "*")
+            .unwrap();
+        response
+            .insert_header("Access-Control-Allow-Methods", "POST")
+            .unwrap();
+        response
+            .insert_header("Access-Control-Allow-Headers", "Content-Type,dmtr-api-key")
+            .unwrap();
+        session
+            .write_response_header(Box::new(response), true)
+            .await
+            .unwrap();
+    }
+
     async fn respond_health(&self, session: &mut Session, ctx: &mut Context) {
         ctx.is_health_request = true;
         session.set_keepalive(None);
@@ -138,6 +158,11 @@ impl ProxyHttp for BaliusProxy {
     where
         Self::CTX: Send + Sync,
     {
+        if session.req_header().method == Method::OPTIONS {
+            self.respond_options(session, ctx).await;
+            return Ok(true);
+        }
+
         let path = session.req_header().uri.path();
         if path == self.config.health_endpoint {
             self.respond_health(session, ctx).await;
