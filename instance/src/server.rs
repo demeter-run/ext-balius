@@ -95,7 +95,15 @@ pub async fn serve(
         .and(warp::post())
         .and(warp::body::json())
         .then(handle_request)
-        .with(warp::cors().allow_any_origin().build());
+        .with(
+            warp::cors()
+                .allow_any_origin()
+                .allow_method("POST")
+                .allow_method("OPTIONS")
+                .allow_headers(vec!["content-type", "dmtr-api-key"])
+                .build(),
+        )
+        .with(warp::log("cors test"));
 
     let address: SocketAddr = config
         .listen_address
