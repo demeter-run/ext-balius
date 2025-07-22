@@ -70,6 +70,49 @@ async fn download_s3_object(s3_url: &str) -> miette::Result<Vec<u8>> {
     Ok(body.to_vec())
 }
 
+fn is_s3_url(url: &str) -> bool {
+    url.starts_with("s3://")
+}
+
+async fn register_worker(runtime: Runtime, failed: FailedWorkers, crd: &BaliusWorker) {
+    let name = crd.name_any();
+    if is_s3_url(&crd.spec.url) {
+        match download_s3_object(&crd.spec.url).await {
+            Ok(bytes) => {
+                if let Err(err) = runtime
+                    .register_worker(&name, &bytes, Value::Object(crd.spec.config.clone()))
+                    .await
+                {
+                    failed.add(&name, &err.to_string()).await;
+                    error!(err =? err, worker = name, "Error registering worker");
+                } else {
+                    failed.remove(&name).await;
+                }
+            }
+            Err(err) => {
+                error!(err = err.to_string(), "Failed to register worker: {name}");
+                failed.add(&name, &err.to_string()).await;
+            }
+        }
+    } else {
+        match Url::parse(&crd.spec.url) {
+            Ok(url) => {
+                if let Err(err) = runtime
+                    .register_worker_from_url(&name, &url, Value::Object(crd.spec.config.clone()))
+                    .await
+                {
+                    failed.add(&name, &err.to_string()).await;
+                    error!(err =? err, worker = name, "Error registering worker");
+                }
+            }
+            Err(err) => {
+                error!(err = err.to_string(), "Failed to register worker: {name}");
+                failed.add(&name, &err.to_string()).await;
+            }
+        }
+    };
+}
+
 #[instrument("crdwatcher", skip_all)]
 pub async fn update_runtime(
     config: &Config,
@@ -95,21 +138,7 @@ pub async fn update_runtime(
                 let name = crd.name_any();
                 if handle_legacy_networks(&crd.spec.network) == config.network {
                     info!("Registering worker: {}", &name);
-                    match download_s3_object(&crd.spec.url).await {
-                        Ok(bytes) => {
-                            if let Err(err) = runtime
-                                .register_worker(&name, &bytes, Value::Object(crd.spec.config))
-                                .await
-                            {
-                                failed.add(&name, &err.to_string()).await;
-                                error!(err =? err, worker = name, "Error registering worker");
-                            }
-                        }
-                        Err(err) => {
-                            failed.add(&name, &err.to_string()).await;
-                            error!(err = err.to_string(), "Failed to register worker: {}", name);
-                        }
-                    };
+                    register_worker(runtime.clone(), failed.clone(), &crd).await;
                 } else {
                     info!("New CRD doesn't match network: {}", &name);
                 }
@@ -123,23 +152,7 @@ pub async fn update_runtime(
                 let name = crd.name_any();
                 if handle_legacy_networks(&crd.spec.network) == config.network {
                     info!("Registering worker: {}", &name);
-                    match download_s3_object(&crd.spec.url).await {
-                        Ok(bytes) => {
-                            if let Err(err) = runtime
-                                .register_worker(&name, &bytes, Value::Object(crd.spec.config))
-                                .await
-                            {
-                                failed.add(&name, &err.to_string()).await;
-                                error!(err =? err, worker = name, "Error registering worker");
-                            } else {
-                                failed.remove(&name).await;
-                            }
-                        }
-                        Err(err) => {
-                            error!(err = err.to_string(), "Failed to register worker: {name}");
-                            failed.add(&name, &err.to_string()).await;
-                        }
-                    };
+                    register_worker(runtime.clone(), failed.clone(), &crd).await;
                 } else {
                     info!("New CRD doesn't match network: {}", &name);
                 }
