@@ -136,11 +136,24 @@ pub async fn update_runtime(
 
             Ok(Some(Event::InitApply(crd))) => {
                 let name = crd.name_any();
-                if handle_legacy_networks(&crd.spec.network) == config.network {
-                    info!("Registering worker: {}", &name);
-                    register_worker(runtime.clone(), failed.clone(), &crd).await;
+                if crd.spec.active.unwrap_or(true) {
+                    if handle_legacy_networks(&crd.spec.network) == config.network {
+                        info!("Registering worker: {}", &name);
+                        register_worker(runtime.clone(), failed.clone(), &crd).await;
+                    } else {
+                        info!("New CRD doesn't match network: {}", &name);
+                    }
                 } else {
-                    info!("New CRD doesn't match network: {}", &name);
+                    info!(
+                        worker = &crd.name_any(),
+                        "worker is inactive, removing from runtime."
+                    );
+                    runtime
+                        .remove_worker(&crd.name_any())
+                        .await
+                        .into_diagnostic()
+                        .context("removing worker from runtime")?;
+                    failed.remove(&crd.name_any()).await;
                 }
             }
 
@@ -150,11 +163,24 @@ pub async fn update_runtime(
 
             Ok(Some(Event::Apply(crd))) => {
                 let name = crd.name_any();
-                if handle_legacy_networks(&crd.spec.network) == config.network {
-                    info!("Registering worker: {}", &name);
-                    register_worker(runtime.clone(), failed.clone(), &crd).await;
+                if crd.spec.active.unwrap_or(true) {
+                    if handle_legacy_networks(&crd.spec.network) == config.network {
+                        info!("Registering worker: {}", &name);
+                        register_worker(runtime.clone(), failed.clone(), &crd).await;
+                    } else {
+                        info!("New CRD doesn't match network: {}", &name);
+                    }
                 } else {
-                    info!("New CRD doesn't match network: {}", &name);
+                    info!(
+                        worker = &crd.name_any(),
+                        "worker is inactive, removing from runtime."
+                    );
+                    runtime
+                        .remove_worker(&crd.name_any())
+                        .await
+                        .into_diagnostic()
+                        .context("removing worker from runtime")?;
+                    failed.remove(&crd.name_any()).await;
                 }
             }
 

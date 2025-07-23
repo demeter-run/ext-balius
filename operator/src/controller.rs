@@ -33,6 +33,7 @@ impl Context {
 )]
 #[kube(status = "BaliusWorkerStatus")]
 #[kube(printcolumn = r#"
+        {"name": "Active", "jsonPath": ".spec.active", "type": "boolean"},
         {"name": "Display Name", "jsonPath": ".spec.displayName", "type": "string"},
         {"name": "Network", "jsonPath": ".spec.network", "type": "string"},
         {"name": "Throughput Tier", "jsonPath":".spec.throughputTier", "type": "string"}, 
@@ -42,11 +43,11 @@ impl Context {
     "#)]
 #[serde(rename_all = "camelCase")]
 pub struct BaliusWorkerSpec {
+    pub active: Option<bool>,
     pub network: String,
     pub throughput_tier: String,
     pub auth_token: String,
 
-    //
     pub version: String,
     pub url: String,
     pub config: serde_json::Map<String, serde_json::Value>,

@@ -23,6 +23,11 @@ resource "kubernetes_manifest" "customresourcedefinition_baliusworkers_demeter_r
         {
           "additionalPrinterColumns" = [
             {
+              "jsonPath" = ".spec.active"
+              "name"     = "Active"
+              "type"     = "boolean"
+            },
+            {
               "jsonPath" = ".spec.displayName"
               "name"     = "Display Name"
               "type"     = "string"
@@ -60,6 +65,10 @@ resource "kubernetes_manifest" "customresourcedefinition_baliusworkers_demeter_r
               "properties" = {
                 "spec" = {
                   "properties" = {
+                    "active" = {
+                      "nullable" = true
+                      "type"     = "boolean"
+                    }
                     "authToken" = {
                       "type" = "string"
                     }
