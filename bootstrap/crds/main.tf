@@ -116,6 +116,10 @@ resource "kubernetes_manifest" "customresourcedefinition_baliusworkers_demeter_r
                     "endpointUrl" = {
                       "type" = "string"
                     }
+                    "error" = {
+                      "nullable" = true
+                      "type"     = "string"
+                    }
                   }
                   "required" = [
                     "authToken",
