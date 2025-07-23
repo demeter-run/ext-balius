@@ -7,9 +7,9 @@ use miette::{Context, IntoDiagnostic};
 use operator::{
     kube::{
         runtime::watcher::{self, Config as ConfigWatcher, Event},
-        Api, Client, ResourceExt,
+        Api, Client, CustomResourceExt, ResourceExt,
     },
-    BaliusWorker,
+    patch_resource_status, BaliusWorker,
 };
 use serde_json::Value;
 use tokio::{pin, sync::RwLock};
@@ -74,7 +74,29 @@ fn is_s3_url(url: &str) -> bool {
     url.starts_with("s3://")
 }
 
-async fn register_worker(runtime: Runtime, failed: FailedWorkers, crd: &BaliusWorker) {
+async fn try_patch_status(client: &Client, crd: &BaliusWorker, error: Option<String>) {
+    if let Err(err) = patch_resource_status(
+        client.clone(),
+        &crd.namespace().unwrap(),
+        BaliusWorker::api_resource(),
+        &crd.name_any(),
+        match error {
+            Some(value) => serde_json::json!({ "error": value }),
+            None => serde_json::json!({ "error": null }),
+        },
+    )
+    .await
+    {
+        error!(crd =? crd, err =? err, "Failed to update status for resource");
+    };
+}
+
+async fn register_worker(
+    client: Client,
+    runtime: Runtime,
+    failed: FailedWorkers,
+    crd: &BaliusWorker,
+) {
     let name = crd.name_any();
     if is_s3_url(&crd.spec.url) {
         match download_s3_object(&crd.spec.url).await {
@@ -84,13 +106,16 @@ async fn register_worker(runtime: Runtime, failed: FailedWorkers, crd: &BaliusWo
                     .await
                 {
                     failed.add(&name, &err.to_string()).await;
+                    try_patch_status(&client, crd, Some(err.to_string())).await;
                     error!(err =? err, worker = name, "Error registering worker");
                 } else {
                     failed.remove(&name).await;
+                    try_patch_status(&client, crd, None).await;
                 }
             }
             Err(err) => {
                 error!(err = err.to_string(), "Failed to register worker: {name}");
+                try_patch_status(&client, crd, Some(err.to_string())).await;
                 failed.add(&name, &err.to_string()).await;
             }
         }
@@ -102,11 +127,16 @@ async fn register_worker(runtime: Runtime, failed: FailedWorkers, crd: &BaliusWo
                     .await
                 {
                     failed.add(&name, &err.to_string()).await;
+                    try_patch_status(&client, crd, Some(err.to_string())).await;
                     error!(err =? err, worker = name, "Error registering worker");
+                } else {
+                    failed.remove(&name).await;
+                    try_patch_status(&client, crd, None).await;
                 }
             }
             Err(err) => {
                 error!(err = err.to_string(), "Failed to register worker: {name}");
+                try_patch_status(&client, crd, Some(err.to_string())).await;
                 failed.add(&name, &err.to_string()).await;
             }
         }
@@ -139,7 +169,8 @@ pub async fn update_runtime(
                 if crd.spec.active.unwrap_or(true) {
                     if handle_legacy_networks(&crd.spec.network) == config.network {
                         info!("Registering worker: {}", &name);
-                        register_worker(runtime.clone(), failed.clone(), &crd).await;
+                        register_worker(client.clone(), runtime.clone(), failed.clone(), &crd)
+                            .await;
                     } else {
                         info!("New CRD doesn't match network: {}", &name);
                     }
@@ -154,6 +185,7 @@ pub async fn update_runtime(
                         .into_diagnostic()
                         .context("removing worker from runtime")?;
                     failed.remove(&crd.name_any()).await;
+                    try_patch_status(&client, &crd, None).await;
                 }
             }
 
@@ -166,7 +198,8 @@ pub async fn update_runtime(
                 if crd.spec.active.unwrap_or(true) {
                     if handle_legacy_networks(&crd.spec.network) == config.network {
                         info!("Registering worker: {}", &name);
-                        register_worker(runtime.clone(), failed.clone(), &crd).await;
+                        register_worker(client.clone(), runtime.clone(), failed.clone(), &crd)
+                            .await;
                     } else {
                         info!("New CRD doesn't match network: {}", &name);
                     }
@@ -181,6 +214,7 @@ pub async fn update_runtime(
                         .into_diagnostic()
                         .context("removing worker from runtime")?;
                     failed.remove(&crd.name_any()).await;
+                    try_patch_status(&client, &crd, None).await;
                 }
             }
 

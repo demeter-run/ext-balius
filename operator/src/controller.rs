@@ -60,17 +60,12 @@ pub struct BaliusWorkerStatus {
     pub endpoint_url: String,
     pub authenticated_endpoint_url: Option<String>,
     pub auth_token: String,
+    pub error: Option<String>,
 }
 
 async fn reconcile(crd: Arc<BaliusWorker>, ctx: Arc<Context>) -> Result<Action> {
     let (hostname, hostname_key) = build_hostname(&crd.spec.auth_token);
     let path = crd.name_any();
-
-    let status = BaliusWorkerStatus {
-        endpoint_url: format!("https://{hostname}/{path}",),
-        authenticated_endpoint_url: format!("https://{hostname_key}/{path}").into(),
-        auth_token: crd.spec.auth_token.clone(),
-    };
 
     let namespace = crd.namespace().unwrap();
     let balius_port = BaliusWorker::api_resource();
@@ -80,7 +75,11 @@ async fn reconcile(crd: Arc<BaliusWorker>, ctx: Arc<Context>) -> Result<Action> 
         &namespace,
         balius_port,
         &crd.name_any(),
-        serde_json::to_value(status)?,
+        serde_json::json!({
+            "endpoint_url": format!("https://{hostname}/{path}"),
+            "authenticated_endpoint_url": format!("https://{hostname_key}/{path}"),
+            "auth_token": crd.spec.auth_token.clone(),
+        }),
     )
     .await?;
 
