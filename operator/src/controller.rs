@@ -76,9 +76,9 @@ async fn reconcile(crd: Arc<BaliusWorker>, ctx: Arc<Context>) -> Result<Action> 
         balius_port,
         &crd.name_any(),
         serde_json::json!({
-            "endpoint_url": format!("https://{hostname}/{path}"),
-            "authenticated_endpoint_url": format!("https://{hostname_key}/{path}"),
-            "auth_token": crd.spec.auth_token.clone(),
+            "endpointUrl": format!("https://{hostname}/{path}"),
+            "authenticatedEndpointUrl": format!("https://{hostname_key}/{path}"),
+            "authToken": crd.spec.auth_token.clone(),
             "error": null,
         }),
     )
