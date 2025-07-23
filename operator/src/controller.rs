@@ -33,6 +33,7 @@ impl Context {
 )]
 #[kube(status = "BaliusWorkerStatus")]
 #[kube(printcolumn = r#"
+        {"name": "Active", "jsonPath": ".spec.active", "type": "boolean"},
         {"name": "Display Name", "jsonPath": ".spec.displayName", "type": "string"},
         {"name": "Network", "jsonPath": ".spec.network", "type": "string"},
         {"name": "Throughput Tier", "jsonPath":".spec.throughputTier", "type": "string"}, 
@@ -42,11 +43,11 @@ impl Context {
     "#)]
 #[serde(rename_all = "camelCase")]
 pub struct BaliusWorkerSpec {
+    pub active: Option<bool>,
     pub network: String,
     pub throughput_tier: String,
     pub auth_token: String,
 
-    //
     pub version: String,
     pub url: String,
     pub config: serde_json::Map<String, serde_json::Value>,
@@ -59,17 +60,12 @@ pub struct BaliusWorkerStatus {
     pub endpoint_url: String,
     pub authenticated_endpoint_url: Option<String>,
     pub auth_token: String,
+    pub error: Option<String>,
 }
 
 async fn reconcile(crd: Arc<BaliusWorker>, ctx: Arc<Context>) -> Result<Action> {
     let (hostname, hostname_key) = build_hostname(&crd.spec.auth_token);
     let path = crd.name_any();
-
-    let status = BaliusWorkerStatus {
-        endpoint_url: format!("https://{hostname}/{path}",),
-        authenticated_endpoint_url: format!("https://{hostname_key}/{path}").into(),
-        auth_token: crd.spec.auth_token.clone(),
-    };
 
     let namespace = crd.namespace().unwrap();
     let balius_port = BaliusWorker::api_resource();
@@ -79,7 +75,11 @@ async fn reconcile(crd: Arc<BaliusWorker>, ctx: Arc<Context>) -> Result<Action> 
         &namespace,
         balius_port,
         &crd.name_any(),
-        serde_json::to_value(status)?,
+        serde_json::json!({
+            "endpoint_url": format!("https://{hostname}/{path}"),
+            "authenticated_endpoint_url": format!("https://{hostname_key}/{path}"),
+            "auth_token": crd.spec.auth_token.clone(),
+        }),
     )
     .await?;
 

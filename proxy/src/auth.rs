@@ -49,13 +49,15 @@ impl BackgroundService for AuthBackgroundService {
                 Ok(Some(Event::InitApply(crd))) => match crd.status {
                     Some(_) => {
                         info!("auth: Adding consumer: {}", crd.name_any());
-                        let consumer = Consumer::from(&crd);
-                        self.state.limiter.write().await.remove(&consumer.key);
-                        self.state
-                            .consumers
-                            .write()
-                            .await
-                            .insert(consumer.key.clone(), consumer);
+                        if crd.spec.active.unwrap_or(true) {
+                            let consumer = Consumer::from(&crd);
+                            self.state.limiter.write().await.remove(&consumer.key);
+                            self.state
+                                .consumers
+                                .write()
+                                .await
+                                .insert(consumer.key.clone(), consumer);
+                        }
                     }
                     None => {
                         // New ports are created without status. When the status is added, a new
@@ -73,11 +75,15 @@ impl BackgroundService for AuthBackgroundService {
                         info!("auth: Updating consumer: {}", crd.name_any());
                         let consumer = Consumer::from(&crd);
                         self.state.limiter.write().await.remove(&consumer.key);
-                        self.state
-                            .consumers
-                            .write()
-                            .await
-                            .insert(consumer.key.clone(), consumer);
+                        if crd.spec.active.unwrap_or(true) {
+                            self.state
+                                .consumers
+                                .write()
+                                .await
+                                .insert(consumer.key.clone(), consumer);
+                        } else {
+                            self.state.consumers.write().await.remove(&consumer.key);
+                        }
                     }
                     None => {
                         // New ports are created without status. When the status is added, a new
