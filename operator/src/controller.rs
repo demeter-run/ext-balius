@@ -79,6 +79,7 @@ async fn reconcile(crd: Arc<BaliusWorker>, ctx: Arc<Context>) -> Result<Action> 
             "endpoint_url": format!("https://{hostname}/{path}"),
             "authenticated_endpoint_url": format!("https://{hostname_key}/{path}"),
             "auth_token": crd.spec.auth_token.clone(),
+            "error": null,
         }),
     )
     .await?;
