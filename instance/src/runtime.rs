@@ -197,9 +197,23 @@ pub async fn update_runtime(
                 let name = crd.name_any();
                 if crd.spec.active.unwrap_or(true) {
                     if handle_legacy_networks(&crd.spec.network) == config.network {
-                        info!("Registering worker: {}", &name);
-                        register_worker(client.clone(), runtime.clone(), failed.clone(), &crd)
-                            .await;
+                        if let Some(status) = crd.status.as_ref() {
+                            if status.error.is_none() {
+                                info!("Registering worker: {}", &name);
+                                register_worker(
+                                    client.clone(),
+                                    runtime.clone(),
+                                    failed.clone(),
+                                    &crd,
+                                )
+                                .await;
+                            } else {
+                                info!(
+                                    worker = &name,
+                                    "worker shows error for registering, skipping"
+                                );
+                            }
+                        }
                     } else {
                         info!("New CRD doesn't match network: {}", &name);
                     }
