@@ -103,7 +103,7 @@ pub async fn serve(
                 .allow_headers(vec!["content-type", "dmtr-api-key"])
                 .build(),
         )
-        .with(warp::log("cors test"));
+        .with(warp::log("server"));
 
     let address: SocketAddr = config
         .listen_address
