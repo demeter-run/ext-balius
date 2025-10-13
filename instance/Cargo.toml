@@ -7,7 +7,7 @@ edition = "2021"
 async-trait = "0.1.88"
 aws-config = "1.6.0"
 aws-sdk-s3 = "1.79.0"
-balius-runtime = { git = "https://github.com/gonzalezzfelipe/balius.git", rev = "2516683761c3ce7af74433ad26bd9caac70d2fcd", features = ["http", "aws"] }
+balius-runtime = { git = "https://github.com/gonzalezzfelipe/balius.git", rev = "4f34ff3d293f969d2b7163f5533e78288766b4de", features = ["http", "aws"] }
 # balius-runtime = { git = "https://github.com/txpipe/balius.git", features = ["http", "aws"] }
 # balius-runtime = { path = "../../balius/balius-runtime", features = ["http", "aws"] }
 base64 = "0.22.1"
