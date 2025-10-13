@@ -40,6 +40,8 @@ impl PostgresStore {
     }
 }
 
+const MAX_UNDOS: usize = 50;
+
 #[async_trait::async_trait]
 impl StoreTrait for PostgresStore {
     async fn find_chain_point(&self, seq: LogSeq) -> Result<Option<ChainPoint>, Error> {
@@ -123,6 +125,39 @@ impl StoreTrait for PostgresStore {
         Ok(AtomicUpdate::Custom(Arc::new(Mutex::new(
             PostgresAtomicUpdate::new(&self.pool, log_seq, &self.shard),
         ))))
+    }
+
+    async fn handle_reset(&self, point: ChainPoint) -> Result<Vec<Block>, Error> {
+        let conn =
+            self.pool.get().await.map_err(|err| {
+                Error::Store(format!("failed to get connection for store: {err}"))
+            })?;
+
+        let rows: Vec<LogEntry> = conn
+            .query(
+                "SELECT logentry FROM wal WHERE shard = $1::TEXT ORDER BY logseq DESC LIMIT $2::BIGINT",
+                &[&self.shard, &(MAX_UNDOS as i64)],
+            )
+            .await
+            .map_err(|err| Error::Store(format!("Failed to query store: {err}")))?
+            .iter().map(|row| {
+                let bytes: Vec<u8> = row.get(0);
+                prost::Message::decode(bytes.as_slice())
+                    .map_err(|err| Error::Store(format!("Failed to decode logentry: {err}",)))
+            }).collect::<Result<_, _>>()?;
+
+        Ok(rows
+            .into_iter()
+            .filter_map(|x| {
+                let block = Block::from_bytes(&x.next_block);
+                if block.slot() > point.slot() {
+                    Some(block)
+                } else {
+                    None
+                }
+            })
+            .rev()
+            .collect())
     }
 }
 

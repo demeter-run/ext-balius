@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Config {
     pub network: String,
+    pub logging_level: Option<String>,
     pub connection: String,
     pub max_pool_size: Option<u32>,
     pub namespace: String,

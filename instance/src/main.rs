@@ -56,13 +56,23 @@ async fn main() -> miette::Result<()> {
     rustls::crypto::aws_lc_rs::default_provider()
         .install_default()
         .expect("Failed to install default provider");
-    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
+
     let registry = Registry::new();
     init_meter_provider(registry.clone())?;
 
     let config: config::Config = config::load_config(&None)
         .into_diagnostic()
         .context("loading config")?;
+
+    tracing_subscriber::fmt()
+        .with_max_level(
+            config
+                .logging_level
+                .as_ref()
+                .map(|x| Level::from_str(x).expect("Invalid logging level"))
+                .unwrap_or(Level::INFO),
+        )
+        .init();
 
     let pg_mgr = bb8_postgres::PostgresConnectionManager::new(
         tokio_postgres::config::Config::from_str(&config.connection)
