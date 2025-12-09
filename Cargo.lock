@@ -697,7 +697,7 @@ dependencies = [
 [[package]]
 name = "balius-runtime"
 version = "0.5.2"
-source = "git+https://github.com/gonzalezzfelipe/balius.git?rev=7f271a748e8765e8ed8c432af3e4219d512e68ad#7f271a748e8765e8ed8c432af3e4219d512e68ad"
+source = "git+https://github.com/gonzalezzfelipe/balius.git?rev=5046d00c03129d913a8473d0db032a92b5a20238#5046d00c03129d913a8473d0db032a92b5a20238"
 dependencies = [
  "async-trait",
  "chrono",
@@ -3872,7 +3872,7 @@ dependencies = [
  "pallas-primitives",
  "pallas-traverse",
  "prost-types",
- "utxorpc-spec",
+ "utxorpc-spec 0.15.0",
 ]
 
 [[package]]
@@ -6510,15 +6510,15 @@ checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
 
 [[package]]
 name = "utxorpc"
-version = "0.10.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bea8f520897c0d0b8048413a2ad72044cc5cbc00c98219a750f048be616f3d7f"
+checksum = "d60b6baab3e86e71acf144ebfe97263f22eddcf2707d19fca5ffdaeeea95e96f"
 dependencies = [
  "bytes",
- "thiserror 1.0.69",
+ "thiserror 2.0.12",
  "tokio",
  "tonic",
- "utxorpc-spec",
+ "utxorpc-spec 0.17.0",
 ]
 
 [[package]]
@@ -6526,6 +6526,22 @@ name = "utxorpc-spec"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a9c73cb3e15766a14cbc99fbd6dbbee04496fc9c64b47b088ae1d7698d43e357"
+dependencies = [
+ "bytes",
+ "futures-core",
+ "pbjson",
+ "pbjson-types",
+ "prost",
+ "prost-types",
+ "serde",
+ "tonic",
+]
+
+[[package]]
+name = "utxorpc-spec"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1d984ee351b308377e118135e638a5d544fdb0855f12a3b088d9dcaf0432052"
 dependencies = [
  "bytes",
  "futures-core",
