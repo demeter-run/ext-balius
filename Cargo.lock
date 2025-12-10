@@ -697,11 +697,12 @@ dependencies = [
 [[package]]
 name = "balius-runtime"
 version = "0.5.2"
-source = "git+https://github.com/gonzalezzfelipe/balius.git?rev=5046d00c03129d913a8473d0db032a92b5a20238#5046d00c03129d913a8473d0db032a92b5a20238"
+source = "git+https://github.com/gonzalezzfelipe/balius.git?rev=0929d137db0ed17ec7c9d2cfb171b30db336ed29#0929d137db0ed17ec7c9d2cfb171b30db336ed29"
 dependencies = [
  "async-trait",
  "chrono",
  "flate2",
+ "futures",
  "hex",
  "itertools 0.14.0",
  "object_store",
