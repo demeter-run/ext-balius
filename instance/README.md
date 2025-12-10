@@ -11,11 +11,9 @@ To develop locally, you need to do the following:
    ```
    On another shell:
    ```shell
-   export VAULT_ADDRESS=http://127.0.0.1:8200
-   export VAULT_FORMAT=json
-   vault policy write balius ../bootstrap/feature/policy.hcl
-   vault secrets enable transit
-   vault token create -policy="balius" -display-name="balius" -ttl="720h" -renewable=true | jq -r '.auth.client_token'
+   vault policy write -address http://127.0.0.1:8200 balius ../bootstrap/feature/policy.hcl
+   vault secrets enable -address http://127.0.0.1:8200 transit
+   vault token create -address http://127.0.0.1:8200 -policy="balius" -display-name="balius" -ttl="720h" -renewable=true -format json | jq -r '.auth.client_token'
 
    ```
    Save the output, it is the token for interacting with vault.
