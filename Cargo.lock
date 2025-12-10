@@ -697,7 +697,7 @@ dependencies = [
 [[package]]
 name = "balius-runtime"
 version = "0.5.2"
-source = "git+https://github.com/gonzalezzfelipe/balius.git?rev=0929d137db0ed17ec7c9d2cfb171b30db336ed29#0929d137db0ed17ec7c9d2cfb171b30db336ed29"
+source = "git+https://github.com/gonzalezzfelipe/balius.git?rev=cc9998cc4d54c5c4a060f73de01d13b03f75513c#cc9998cc4d54c5c4a060f73de01d13b03f75513c"
 dependencies = [
  "async-trait",
  "chrono",
