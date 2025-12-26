@@ -102,11 +102,11 @@ impl LoggerProvider for PostgresLogger {
     async fn log(&mut self, worker_id: &str, level: Level, context: String, message: String) {
         let level = match level {
             Level::Info => "INFO",
-            Level::Trace => "TRACE",
             Level::Debug => "DEBUG",
             Level::Error => "ERROR",
             Level::Warn => "WARN",
             Level::Critical => "CRITICAL",
+            Level::Trace => return,
         };
 
         let row = LogRow {
