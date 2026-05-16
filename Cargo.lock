@@ -695,11 +695,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "balius-core"
+version = "0.5.2"
+source = "git+https://github.com/txpipe/balius.git?rev=e3ed784#e3ed784e3ce0feb676be3c4ef9a3f287f7469fa3"
+dependencies = [
+ "bytes",
+ "prost",
+ "serde",
+ "serde_with",
+]
+
+[[package]]
 name = "balius-runtime"
 version = "0.5.2"
-source = "git+https://github.com/gonzalezzfelipe/balius.git?rev=8100e19bae8cb225adc23595423b77bec9fcb6a0#8100e19bae8cb225adc23595423b77bec9fcb6a0"
+source = "git+https://github.com/txpipe/balius.git?rev=e3ed784#e3ed784e3ce0feb676be3c4ef9a3f287f7469fa3"
 dependencies = [
  "async-trait",
+ "balius-core",
  "chrono",
  "flate2",
  "futures",
