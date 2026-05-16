@@ -697,7 +697,7 @@ dependencies = [
 [[package]]
 name = "balius-core"
 version = "0.5.2"
-source = "git+https://github.com/gonzalezzfelipe/balius.git?rev=6b03628#6b03628f4ff3f9883ee281a124fef8c708d1e824"
+source = "git+https://github.com/txpipe/balius.git?rev=e3ed784#e3ed784e3ce0feb676be3c4ef9a3f287f7469fa3"
 dependencies = [
  "bytes",
  "prost",
@@ -708,7 +708,7 @@ dependencies = [
 [[package]]
 name = "balius-runtime"
 version = "0.5.2"
-source = "git+https://github.com/gonzalezzfelipe/balius.git?rev=6b03628#6b03628f4ff3f9883ee281a124fef8c708d1e824"
+source = "git+https://github.com/txpipe/balius.git?rev=e3ed784#e3ed784e3ce0feb676be3c4ef9a3f287f7469fa3"
 dependencies = [
  "async-trait",
  "balius-core",
